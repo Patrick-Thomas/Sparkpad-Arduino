@@ -32,3 +32,7 @@ These files contain code specific to a particular Sparkpad component. Contained 
 ### Contributing
 
 We are excited to see what people can make their Sparkpad do! If you want to share your new functionality with the community then please fork this repository and submit a pull request. 
+
+### Support
+
+If you would like to join The Sparkpad Discord Community where we also have a wider community dedicated to streamers please feel free to [join](https://discord.gg/uvYdVn9TBU) or for more information please visit the [Sparkpad Website](https://sparkpad.co.uk)
