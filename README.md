@@ -8,7 +8,7 @@ We are hoping to foster a development community, and we will continue to develop
 
 ### Getting started
 
-To start developing custom firmware for your V1 Sparkpad (or to update to newer firmware), you will first need to install the [Arduino IDE](https://www.arduino.cc/en/software){:target="_blank"}, and install the Sparkpad library using the Arduino Library Manager.
+To start developing custom firmware for your V1 Sparkpad (or to update to newer firmware), you will first need to install the [Arduino IDE](https://www.arduino.cc/en/software), and install the Sparkpad library using the Arduino Library Manager.
 
 Your Sparkpad will be visible to the Arduino IDE as a serial device on a particular port, and the port name will depend on which OS you are using (COM for Windows, dev/tty for Mac and Linux). The board type is Arduino Leonardo. 
 
