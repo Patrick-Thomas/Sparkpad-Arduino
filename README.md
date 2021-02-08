@@ -2,9 +2,9 @@
 
 The Sparkpad is a reconfigurable control surface, primarily aimed at Streamers. The V1 Sparkpad is designed to communicate with streaming software - such as OBS - via HID commands sent over USB. However, due to it's modular hardware design and open source Arduino firmware, there is scope to do much more.
 
-![](/images/sparkpad.jpg)
-
 We are hoping to foster a development community, and we will continue to develop improvements for the Sparkpad as and when we can (currently the team only consists of two members)!
+
+![](/images/sparkpad.jpg)
 
 ### Getting started
 
@@ -27,7 +27,7 @@ If you are just looking to adjust key mappings or other global parameters on you
 
 #### knob.h, leds.h and oled.h files
 
-These files contain code specific to a particular Sparkpad component. Contained within these files are references to external libraries which are also part of the Arduino ecosystem. If you are looking to add bespoke functionality to your Sparkpad, then you will probably have to tweak these files.
+These files contain code specific to a particular Sparkpad component. These files have their own **definitions** and **includes** which are specific to each component, and all the functions which define their behaviour. If you are looking to add bespoke functionality to your Sparkpad, then you will probably have to tweak one or more of these files.
 
 ### Contributing
 
