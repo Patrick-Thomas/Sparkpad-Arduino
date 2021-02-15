@@ -1,12 +1,18 @@
-#define dataPin 8
-#define clockPin 7
-#define strobePin 6
-
 #define TM16XX_CMD_DATA_AUTO 0x40
 #define TM16XX_CMD_DATA_READ 0x42      // command to read data used on two wire interfaces of TM1637
 #define TM16XX_CMD_DATA_FIXED 0x44
 #define TM16XX_CMD_DISPLAY 0x80
 #define TM16XX_CMD_ADDRESS 0xC0
+
+#ifdef PROTOTYPE_PCB
+#define dataPin 8
+#define clockPin 7
+#define strobePin 6
+#else
+#define dataPin 10
+#define clockPin 16
+#define strobePin 14
+#endif
 
 byte grid_array[16] = {};
 

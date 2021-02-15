@@ -1,8 +1,10 @@
 #include <Encoder.h>
 
-#define VOLUME_RANGE_UBUNTU 18
-
-Encoder knob(4, 5);
+#ifdef PROTOTYPE_PCB
+Encoder knob(5, 4);
+#else
+Encoder knob(20, 19);
+#endif
 
 long knob_value = 0;
 byte bar_value = 0;

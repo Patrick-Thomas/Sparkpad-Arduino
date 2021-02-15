@@ -2,6 +2,8 @@
  * HID firmware for the Pro Micro board (aka Arduino Leonardo)
  */
 
+#define PROTOTYPE_PCB
+
 /*
  * Files to include
  */
@@ -66,8 +68,13 @@ char keys[ROWS][COLS] = {
   {'A','B','C','D'}
 };
 
+#ifdef PROTOTYPE_PCB
 byte rowPins[ROWS] = {20, 16, 10, 14};
 byte colPins[COLS] = {19, 18, 15, 21};
+#else
+byte rowPins[ROWS] = {5, 15, 9, 8};
+byte colPins[COLS] = {6, 7, 18, 4};
+#endif
 
 Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
 
@@ -182,10 +189,10 @@ void loop() {
 //    if (knob_value_new > knob_value) Keyboard.write(KNOB_DECREASE);
 //    else Keyboard.write(KNOB_INCREASE);
 
-    if (knob_value_new > knob_value) Consumer.write(KNOB_DECREASE);
-    else Consumer.write(KNOB_INCREASE);
+    if (knob_value_new > knob_value) Consumer.write(KNOB_INCREASE);
+    else Consumer.write(KNOB_DECREASE);
 
-    bar_value = min(max(0, bar_value + (knob_value - knob_value_new)),VOLUME_RANGE);
+    bar_value = min(max(0, bar_value + (knob_value_new - knob_value)),VOLUME_RANGE);
     knob_value = knob_value_new;
     float translated = bar_value*(10.0/VOLUME_RANGE);
     update_bar(round(translated));
