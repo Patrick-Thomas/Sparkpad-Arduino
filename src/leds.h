@@ -4,6 +4,8 @@
 #define TM16XX_CMD_DISPLAY 0x80
 #define TM16XX_CMD_ADDRESS 0xC0
 
+#ifdef ARDUINO_AVR_LEONARDO
+
 #ifdef PROTOTYPE_PCB
 #define dataPin 8
 #define clockPin 7
@@ -12,6 +14,22 @@
 #define dataPin 10
 #define clockPin 16
 #define strobePin 14
+#endif
+
+#elif ESP32
+
+#ifdef PROTOTYPE_PCB
+#define dataPin 19
+#define clockPin 18
+#define strobePin 5
+#else
+#define dataPin 32
+#define clockPin 33
+#define strobePin 25
+#endif
+
+#else
+#error this board isn't supported! Must be Arduino Leonardo or ESP32
 #endif
 
 byte grid_array[16] = {};
@@ -93,5 +111,9 @@ void update_bar(byte value) {
 
 void setupDisplay(boolean active, byte intensity)
 {
+  #ifdef ARDUINO_AVR_LEONARDO
   sendCommand(TM16XX_CMD_DISPLAY | (active ? 8 : 0) | min(7, intensity));
+  #elif ESP32
+  sendCommand(TM16XX_CMD_DISPLAY | (active ? 8 : 0) | _min(7, intensity));
+  #endif
 }
