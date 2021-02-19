@@ -13,6 +13,8 @@
  */
 // For some reason it cant find it when looking in knob.h without this
 #include <Encoder.h>
+#include <Wifi.h>
+#include <WebServer.h>
 
 #include <Keypad.h>
 
@@ -60,6 +62,17 @@
 #define VOLUME_RANGE 18
 #endif
 
+const char* ssid = "sparkpad-test";
+const char* pass = "123";
+
+IPAddress localIP(192,168,1,1);
+IPAddress gateway(192,168,1,1);
+IPAddress subnet(255,255,255,0);
+
+WebServer server(80);
+
+
+
 /*
  * Firmware begins here
  */
@@ -84,8 +97,6 @@ byte colPins[COLS] = {17, 18, 27, 4};
 Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
 
 void keyEventListener(KeypadEvent key, KeyState kpadState) {
-
-  Serial.print(key);  
   if (kpadState == PRESSED) {
   
     switch (key) {
@@ -131,6 +142,41 @@ void update_leds() {
   update_all_leds(ledColour);
 }
 
+String sendHtml()
+{
+  String ptr = "<!DOCTYPE html> <html>\n";
+  ptr += "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
+  ptr += "<title>LED Control</title>\n";
+  ptr += "<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
+  ptr += "body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}\n";
+  ptr += ".button {display: block;width: 80px;background-color: #3498db;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
+  ptr += ".button-on {background-color: #3498db;}\n";
+  ptr += ".button-on:active {background-color: #2980b9;}\n";
+  ptr += ".button-off {background-color: #34495e;}\n";
+  ptr += ".button-off:active {background-color: #2c3e50;}\n";
+  ptr += "p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
+  ptr += "</style>\n";
+  ptr += "</head>\n";
+  ptr += "<body>\n";
+  ptr += "<h1>Sparkpad Web Server</h1>\n";
+  ptr += "<h3>Using Access Point(AP) Mode</h3>\n";
+  ptr += "<h1>Welcome to testing :D </h1>";
+  ptr += "</body>\n";
+  ptr += "</html>\n";
+  return ptr;
+}
+
+void handleNotFound()
+{
+  server.send(404, "text/plain", "You are in the wrong place buddy");
+}
+
+void handleOnConnect()
+{
+  server.send(200, "text/html", sendHtml());
+  Serial.println("Client Connected");
+}
+
 void setup(){
 
   // EEPROM settings
@@ -162,6 +208,20 @@ void setup(){
   digitalWrite(clockPin, HIGH);
 
   update_leds();
+
+  Serial.println("Starting Wifi Server (AP)");
+  WiFi.softAP(ssid);
+  delay(100);
+
+  IPAddress ip = WiFi.softAPIP();
+  Serial.print("AP IP Address: ");
+  Serial.println(ip);
+
+  server.on("/", handleOnConnect);
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("Server started!");
 }
 
 void loop() {
@@ -192,4 +252,7 @@ void loop() {
     led_brightness_current = ledBrightness;
     update_leds();
   }
+
+  // Wifi Server
+  server.handleClient();
 }
