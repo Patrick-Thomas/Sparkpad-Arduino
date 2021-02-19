@@ -8,12 +8,12 @@
  * Files to include
  */
 
-#include "HID-Project.h"
-#include <Keypad.h>
-
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
+
+#include "HID-Project.h"
+#include <Keypad.h>
 
 /*
  * Definitions
