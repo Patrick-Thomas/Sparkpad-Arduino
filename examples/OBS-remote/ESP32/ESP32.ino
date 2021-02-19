@@ -11,6 +11,8 @@
 /*
  * Files to include
  */
+// For some reason it cant find it when looking in knob.h without this
+#include <Encoder.h>
 
 #include <Keypad.h>
 
@@ -47,8 +49,8 @@
 #define KNOB_BUTTON MEDIA_VOLUME_MUTE
 
 // Choose your OS here (Comment out incorrect OS) 
-//#define OS_WINDOWS10
-#define OS_UBUNTU
+#define OS_WINDOWS10
+//#define OS_UBUNTU
 
 #ifdef OS_WINDOWS10
 #define VOLUME_RANGE 50
@@ -82,7 +84,8 @@ byte colPins[COLS] = {17, 18, 27, 4};
 Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
 
 void keyEventListener(KeypadEvent key, KeyState kpadState) {
-  
+
+  Serial.print(key);  
   if (kpadState == PRESSED) {
   
     switch (key) {
