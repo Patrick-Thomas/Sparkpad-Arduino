@@ -29,7 +29,7 @@
 #endif
 
 #else
-#error this board isn't supported! Must be Arduino Leonardo or ESP32
+#error this board is not supported! Must be Arduino Leonardo or ESP32
 #endif
 
 byte grid_array[16] = {};

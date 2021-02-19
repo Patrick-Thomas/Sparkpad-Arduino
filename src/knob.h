@@ -17,8 +17,9 @@ Encoder knob(13, 14);
 #endif
 
 #else
-#error this board isn't supported! Must be Arduino Leonardo or ESP32
+#error this board is not supported! Must be Arduino Leonardo or ESP32
 #endif
 
 long knob_value = 0;
 byte bar_value = 0;
+byte bar_address = 2;

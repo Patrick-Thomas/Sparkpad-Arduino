@@ -78,6 +78,25 @@ byte colPins[COLS] = {6, 7, 18, 4};
 
 Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
 
+long previous_bar_value;
+
+void knob_button()
+{
+  Consumer.press(KNOB_BUTTON);
+  if (bar_value != 0)
+  {
+    previous_bar_value = bar_value;
+    bar_value = 0;
+  }
+  else
+  {
+    bar_value = previous_bar_value;
+  }
+
+  float translated = bar_value * (10.0 / VOLUME_RANGE);
+  update_bar(round(translated));
+}
+
 void keyEventListener(KeypadEvent key, KeyState kpadState) {
   
   if (kpadState == PRESSED) {
@@ -96,7 +115,9 @@ void keyEventListener(KeypadEvent key, KeyState kpadState) {
       case '9': Keyboard.press(BUTTON_10); break;
       case ':': Keyboard.press(BUTTON_11); break;
       case ';': Keyboard.press(BUTTON_12); break;
-      case 'A': Consumer.press(KNOB_BUTTON); break;
+      case 'A':
+        knob_button();
+        break;
       case 'B': 
         nav.doNav(downCmd);
         nav.doOutput();
@@ -148,6 +169,7 @@ void setup(){
   ledBrightness = EEPROM.read(ledBrightnessAddress);
   led_colour_current = ledColour;
   led_brightness_current = ledBrightness;
+  bar_value = EEPROM.read(bar_address);
 
   // Keyboard
   Keyboard.begin();
@@ -176,6 +198,10 @@ void setup(){
   digitalWrite(clockPin, HIGH);
 
   update_leds();
+
+  // update the led bar
+  float translated = bar_value * (10.0 / VOLUME_RANGE);
+  update_bar(round(translated));
 }
 
 void loop() {
