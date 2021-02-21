@@ -1,5 +1,5 @@
 /*
- * HID firmware for the Pro Micro board (aka Arduino Leonardo)
+ * default firmware for the Pro Micro board (aka Arduino Leonardo) with no shift key
  */
 
 #define PROTOTYPE_PCB
@@ -8,11 +8,14 @@
  * Files to include
  */
 
+// Extra files - have to be first here because reasons (Arduino and PlatformIO disagree on preprocessor directives?)
+#include <Arduino.h>
+#include <HID-Project.h>
+
+// Core files
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
-
-#include "HID-Project.h"
 #include <Keypad.h>
 
 /*
@@ -31,13 +34,9 @@
 #define BUTTON_7 KEY_F19
 #define BUTTON_8 KEY_F20
 #define BUTTON_9 KEY_F21
-#define BUTTON_10 KEY_RIGHT_SHIFT
+#define BUTTON_10 KEY_F22
 #define BUTTON_11 KEY_F23
 #define BUTTON_12 KEY_F24
-
-//#define KNOB_INCREASE KEY_VOLUME_UP
-//#define KNOB_DECREASE KEY_VOLUME_DOWN
-//#define KNOB_BUTTON KEY_VOLUME_MUTE
 
 #define KNOB_INCREASE MEDIA_VOLUME_UP
 #define KNOB_DECREASE MEDIA_VOLUME_DOWN
@@ -176,9 +175,9 @@ void setup(){
   keypad.addStatedEventListener(keyEventListener);
   Consumer.begin();
 
-  // Serial
-//  Serial.begin(9600);
-//  while(!Serial);
+  // Serial must be disabled for HID to work properly
+  // Serial.begin(9600);
+  // while(!Serial);
 
   // OLED
   Wire.begin();
@@ -211,9 +210,6 @@ void loop() {
   long knob_value_new = knob.read();
 
   if (knob_value_new != knob_value) {
-
-//    if (knob_value_new > knob_value) Keyboard.write(KNOB_DECREASE);
-//    else Keyboard.write(KNOB_INCREASE);
 
     if (knob_value_new > knob_value) Consumer.write(KNOB_INCREASE);
     else Consumer.write(KNOB_DECREASE);

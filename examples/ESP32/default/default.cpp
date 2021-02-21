@@ -3,7 +3,7 @@
 //
 
 /*
- * OBS-remote firmware for the ESP32
+ * default firmware for the ESP32
  */
 
 #define PROTOTYPE_PCB
@@ -11,16 +11,16 @@
 /*
  * Files to include
  */
-// For some reason it cant find it when looking in knob.h without this
-#include <Encoder.h>
-#include <Wifi.h>
-#include <WebServer.h>
 
-#include <Keypad.h>
-
+// Core files
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
+#include <Keypad.h>
+
+// Extra files
+#include <WiFi.h>
+#include <WebServer.h>
 
 /*
  * Definitions
@@ -41,10 +41,6 @@
 #define BUTTON_10 KEY_RIGHT_SHIFT
 #define BUTTON_11 KEY_F23
 #define BUTTON_12 KEY_F24
-
-//#define KNOB_INCREASE KEY_VOLUME_UP
-//#define KNOB_DECREASE KEY_VOLUME_DOWN
-//#define KNOB_BUTTON KEY_VOLUME_MUTE
 
 #define KNOB_INCREASE MEDIA_VOLUME_UP
 #define KNOB_DECREASE MEDIA_VOLUME_DOWN
@@ -70,8 +66,6 @@ IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
 
 WebServer server(80);
-
-
 
 /*
  * Firmware begins here
