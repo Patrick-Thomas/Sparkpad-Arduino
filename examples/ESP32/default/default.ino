@@ -21,6 +21,9 @@
 // Extra files
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+#include "SPIFFS.h"
 
 /*
  * Definitions
@@ -57,6 +60,8 @@
 #ifdef OS_UBUNTU
 #define VOLUME_RANGE 18
 #endif
+
+#define FORMAT_SPIFFS_IF_FAILED true
 
 const char* ssid = "sparkpad-test";
 const char* pass = "123";
@@ -153,11 +158,34 @@ String sendHtml()
   ptr += "</head>\n";
   ptr += "<body>\n";
   ptr += "<h1>Sparkpad Web Server</h1>\n";
-  ptr += "<h3>Using Access Point(AP) Mode</h3>\n";
-  ptr += "<h1>Welcome to testing :D </h1>";
+  ptr += "<h3>Please enter your Wifi Network name and password</h3>\n";
+  ptr += "<form action='store'>";
+  ptr += "<input type='text' name='name' placeholder='Wifi Network' />";
+  ptr += "<input type='text' name='pass' placeholder=' Wifi Password' />";
+  ptr += "<input type='submit' name='submit' />";
+  ptr += "</form>";
   ptr += "</body>\n";
   ptr += "</html>\n";
   return ptr;
+}
+
+void handleGet()
+{
+  server.send(200, "text/plain", "Thanks, please bear with us");
+  // store the name and pass in strings to be used
+  String name = server.arg(0);
+  String pass = server.arg(1);
+
+  DynamicJsonDocument doc(150);
+  File configFile = SPIFFS.open("/WiFisettings.json", "w");
+
+  doc["name"] = name;
+  doc["pass"] = pass;
+
+  serializeJson(doc, configFile);
+  serializeJson(doc, Serial);
+  configFile.close();
+  Serial.println("Saved Config settings... Rebooting....");
 }
 
 void handleNotFound()
@@ -171,9 +199,41 @@ void handleOnConnect()
   Serial.println("Client Connected");
 }
 
-void setup(){
+bool readConfig(String fileName) {
+  if(SPIFFS.exists(fileName)) {
+    File file = SPIFFS.open(fileName, "r");
+    DynamicJsonDocument doc(150);
+    deserializeJson(doc, file);
+    serializeJson(doc, Serial);
+    file.close();
+    return true;
+  } else {
+    Serial.println("File not Found");
+    return false;
+  }
+}
 
+void bootAP(){
+  // WIFI
+  Serial.println("Starting Wifi Server (AP)");
+  WiFi.softAP(ssid);
+  delay(100);
+
+  IPAddress ip = WiFi.softAPIP();
+  Serial.print("AP IP Address: ");
+  Serial.println(ip);
+
+  server.on("/", handleOnConnect);
+  server.on("/store", handleGet);
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("Server started!");
+}
+
+void setup(){
   // EEPROM settings
+
   ledColour = EEPROM.read(ledColourAddress);
   ledBrightness = EEPROM.read(ledBrightnessAddress);
   led_colour_current = ledColour;
@@ -203,19 +263,18 @@ void setup(){
 
   update_leds();
 
-  Serial.println("Starting Wifi Server (AP)");
-  WiFi.softAP(ssid);
-  delay(100);
+  // SPIFFS
+  Serial.println("Starting Spiffs");
+  if(!SPIFFS.begin(true)) {
+    Serial.println("Error mounting filesystem");
+    return;
+  }
 
-  IPAddress ip = WiFi.softAPIP();
-  Serial.print("AP IP Address: ");
-  Serial.println(ip);
-
-  server.on("/", handleOnConnect);
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  Serial.println("Server started!");
+  if(readConfig("/WiFisettings.json")) {
+    Serial.println("File Found");
+  } else {
+    bootAP();
+  }
 }
 
 void loop() {
