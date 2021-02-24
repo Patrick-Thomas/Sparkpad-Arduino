@@ -78,7 +78,7 @@ String configPath = "/WiFiSettings.json";
  * Firmware begins here
  */
 
-    const byte ROWS = 4;
+const byte ROWS = 4;
 const byte COLS = 4;
 char keys[ROWS][COLS] = {
   {'0','3','6','9'},
@@ -209,19 +209,44 @@ void handleOnConnectSSID()
   Serial.println("Viewing from inside the server");
 }
 
-    bool
-    readConfig(String fileName)
+void handleReset()
+{
+  server.send(200, "text/plain", "Resetting Config, please bear with us.");
+  serial.println("removing config.....");
+  SPIFFS.remove(configPath);
+  serial.println("Config removed rebooting");
+  delay(3000);
+  ESP.restart();
+}
+
+bool readConfig(String fileName)
 {
   if(SPIFFS.exists(fileName)) {
     File file = SPIFFS.open(fileName, "r");
     DynamicJsonDocument doc(150);
     deserializeJson(doc, file);
-    //serializeJson(doc, Serial);
+    serializeJson(doc, Serial);
     file.close();
     return true;
   } else {
     Serial.println("File not Found");
     return false;
+  }
+}
+
+void setupEndpoints(String type)
+{
+  if (type == "AP")
+  {
+    server.on("/", handleOnConnect);
+    server.on("/store", handleGet);
+    server.onNotFound(handleNotFound);
+  }
+  else if (type == "ST")
+  {
+    server.on("/", handleOnConnectSSID);
+    server.on("/reset", handleReset);
+    server.onNotFound(handleNotFound);
   }
 }
 
@@ -235,9 +260,7 @@ void bootAP(){
   Serial.print("AP IP Address: ");
   Serial.println(ip);
 
-  server.on("/", handleOnConnect);
-  server.on("/store", handleGet);
-  server.onNotFound(handleNotFound);
+  setupEndpoints("AP");
 
   server.begin();
   Serial.println("Server started!");
@@ -269,9 +292,7 @@ void bootSSID(){
   Serial.println(WiFi.macAddress());
   Serial.println(WiFi.localIP());
 
-  server.on("/", handleOnConnectSSID);
-  server.on("/store", handleGet);
-  server.onNotFound(handleNotFound);
+  setupEndpoints("ST");
 
   server.begin();
   Serial.println("Server started!");
