@@ -72,11 +72,13 @@ IPAddress subnet(255,255,255,0);
 
 WebServer server(80);
 
-/*
+String configPath = "/WiFiSettings.json";
+
+    /*
  * Firmware begins here
  */
 
-const byte ROWS = 4;
+    const byte ROWS = 4;
 const byte COLS = 4;
 char keys[ROWS][COLS] = {
   {'0','3','6','9'},
@@ -177,7 +179,7 @@ void handleGet()
   String pass = server.arg(1);
 
   DynamicJsonDocument doc(150);
-  File configFile = SPIFFS.open("/WiFisettings.json", "w");
+  File configFile = SPIFFS.open(configPath, "w");
 
   doc["name"] = name;
   doc["pass"] = pass;
@@ -185,7 +187,9 @@ void handleGet()
   serializeJson(doc, configFile);
   serializeJson(doc, Serial);
   configFile.close();
-  Serial.println("Saved Config settings... Rebooting....");
+  Serial.println("\nSaved Config settings... Rebooting in 5 3 seconds");
+  delay(3000);
+  ESP.restart();
 }
 
 void handleNotFound()
@@ -195,16 +199,24 @@ void handleNotFound()
 
 void handleOnConnect()
 {
-  server.send(200, "text/html", sendHtml());
-  Serial.println("Client Connected");
+    server.send(200, "text/html", sendHtml());
+    Serial.println("Client Connected");
 }
 
-bool readConfig(String fileName) {
+void handleOnConnectSSID()
+{
+  server.send(200, "text/plain", "Welcome In");
+  Serial.println("Viewing from inside the server");
+}
+
+    bool
+    readConfig(String fileName)
+{
   if(SPIFFS.exists(fileName)) {
     File file = SPIFFS.open(fileName, "r");
     DynamicJsonDocument doc(150);
     deserializeJson(doc, file);
-    serializeJson(doc, Serial);
+    //serializeJson(doc, Serial);
     file.close();
     return true;
   } else {
@@ -224,6 +236,40 @@ void bootAP(){
   Serial.println(ip);
 
   server.on("/", handleOnConnect);
+  server.on("/store", handleGet);
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("Server started!");
+}
+
+void bootSSID(){
+  Serial.println("Connecting to WiFi using credentials from settings");
+
+  File configFile = SPIFFS.open(configPath, "r");
+
+  StaticJsonDocument<150> doc;
+
+  DeserializationError error = deserializeJson(doc, configFile);
+  if (error)
+    Serial.println(F("Failed to read file, using default configuration"));
+
+  const char* name = doc["name"];
+  const char* pass = doc["pass"];
+
+  WiFi.begin(name, pass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Establishing connection to WiFi..");
+  }
+ 
+  Serial.println("Connected to network");
+
+  Serial.println(WiFi.macAddress());
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleOnConnectSSID);
   server.on("/store", handleGet);
   server.onNotFound(handleNotFound);
 
@@ -265,13 +311,15 @@ void setup(){
 
   // SPIFFS
   Serial.println("Starting Spiffs");
-  if(!SPIFFS.begin(true)) {
-    Serial.println("Error mounting filesystem");
-    return;
-  }
+   if(!SPIFFS.begin(true)) {
+     Serial.println("Error mounting filesystem");
+     return;
+   }
 
-  if(readConfig("/WiFisettings.json")) {
-    Serial.println("File Found");
+   //SPIFFS.remove(configPath);
+
+  if(readConfig(configPath)) {
+    bootSSID();
   } else {
     bootAP();
   }
@@ -308,4 +356,7 @@ void loop() {
 
   // Wifi Server
   server.handleClient();
+
+  // delay(10000);
+  // Serial.println("WiFi Status: " + WiFi.status());
 }
