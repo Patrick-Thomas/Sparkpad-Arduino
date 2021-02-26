@@ -171,7 +171,64 @@ String sendHtml()
   return ptr;
 }
 
-void handleGet()
+String sendConfigHtml(String name, String pass)
+{
+  String ptr = "<!DOCTYPE html> <html>\n";
+  ptr += "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
+  ptr += "<title>Sparkpad Config</title>\n";
+  ptr += "<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
+  ptr += "body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}\n";
+  ptr += ".button {display: block;width: 80px;background-color: #3498db;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
+  ptr += ".button-on {background-color: #3498db;}\n";
+  ptr += ".button-on:active {background-color: #2980b9;}\n";
+  ptr += ".button-off {background-color: #34495e;}\n";
+  ptr += ".button-off:active {background-color: #2c3e50;}\n";
+  ptr += "p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
+  ptr += "</style>\n";
+  ptr += "</head>\n";
+  ptr += "<body>\n";
+  ptr += "<h1>Sparkpad Config Edditor</h1>\n";
+  ptr += "<h3>Update your settings from here</h3>\n";
+  ptr += "<form action='configSet'>";
+  ptr += "<input type='text' name='name' value='" + name + "' />";
+  ptr += "<input type='password' name='pass' value='" + pass + "' />";
+  ptr += "<input type='submit' name='submit' />";
+  ptr += "</form>";
+  ptr += "<br /><br />";
+  ptr += "<a href='/reset'>Reset esp32 config</a>";
+  ptr += "</body>\n";
+  ptr += "</html>\n";
+  return ptr;
+}
+
+String sendHomePage()
+{
+  String ptr = "<!DOCTYPE html> <html>\n";
+  ptr += "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
+  ptr += "<title>Sparkpad Config</title>\n";
+  ptr += "<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
+  ptr += "body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}\n";
+  ptr += ".button {display: block;width: 80px;background-color: #3498db;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
+  ptr += ".button-on {background-color: #3498db;}\n";
+  ptr += ".button-on:active {background-color: #2980b9;}\n";
+  ptr += ".button-off {background-color: #34495e;}\n";
+  ptr += ".button-off:active {background-color: #2c3e50;}\n";
+  ptr += "p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
+  ptr += "</style>\n";
+  ptr += "</head>\n";
+  ptr += "<body>\n";
+  ptr += "<h1>Sparkpad</h1>\n";
+  ptr += "<h3>Select a place to go below</h3>\n";
+  ptr += "<br /><br />";
+  ptr += "<a href='/reset'>Reset config</a>    ";
+  ptr += "<a href='/config'>Edit config</a>";
+  ptr += "</body>\n";
+  ptr += "</html>\n";
+  return ptr;
+}
+
+    void
+    handleGet()
 {
   server.send(200, "text/plain", "Thanks, please bear with us");
   // store the name and pass in strings to be used
@@ -187,7 +244,7 @@ void handleGet()
   serializeJson(doc, configFile);
   serializeJson(doc, Serial);
   configFile.close();
-  Serial.println("\nSaved Config settings... Rebooting in 5 3 seconds");
+  Serial.println("\nSaved Config settings... Rebooting in 3 seconds");
   delay(3000);
   ESP.restart();
 }
@@ -205,8 +262,7 @@ void handleOnConnect()
 
 void handleOnConnectSSID()
 {
-  server.send(200, "text/plain", "Welcome In");
-  Serial.println("Viewing from inside the server");
+  server.send(200, "text/html", sendHomePage());
 }
 
 void handleReset()
@@ -215,6 +271,43 @@ void handleReset()
   serial.println("removing config.....");
   SPIFFS.remove(configPath);
   serial.println("Config removed rebooting");
+  delay(3000);
+  ESP.restart();
+}
+
+void handleconfigGet()
+{
+  File configFile = SPIFFS.open(configPath, "r");
+
+  StaticJsonDocument<150> doc;
+
+  DeserializationError error = deserializeJson(doc, configFile);
+  if (error)
+    Serial.println(F("Failed to read file, using default configuration"));
+
+  String name = doc["name"];
+  String pass = doc["pass"];
+
+  server.send(200, "text/html", sendConfigHtml(name, pass));
+}
+
+void handleConfigSet()
+{
+  SPIFFS.remove(configPath);
+
+  String name = server.arg(0);
+  String pass = server.arg(1);
+
+  DynamicJsonDocument doc(150);
+  File configFile = SPIFFS.open(configPath, "w");
+
+  doc["name"] = name;
+  doc["pass"] = pass;
+
+  serializeJson(doc, configFile);
+  serializeJson(doc, Serial);
+  configFile.close();
+  Serial.println("\nSaved Config settings... Rebooting in 3 seconds");
   delay(3000);
   ESP.restart();
 }
@@ -246,6 +339,8 @@ void setupEndpoints(String type)
   {
     server.on("/", handleOnConnectSSID);
     server.on("/reset", handleReset);
+    server.on("/config", handleconfigGet);
+    server.on("/configSet", handleConfigSet);
     server.onNotFound(handleNotFound);
   }
 }
@@ -282,9 +377,17 @@ void bootSSID(){
 
   WiFi.begin(name, pass);
 
+  int i = 0;
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Establishing connection to WiFi..");
+    i++;
+    if(i > 12) {
+      Serial.println("Cannot connect to network try again!");
+      SPIFFS.remove(configPath);
+      ESP.restart();
+    }
   }
  
   Serial.println("Connected to network");
