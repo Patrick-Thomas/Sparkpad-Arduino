@@ -139,8 +139,8 @@ void keyEventListener(KeypadEvent key, KeyState kpadState) {
 
 void update_leds() {
 
-  setupDisplay(true, ledBrightness);
-  update_all_leds(ledColour);
+  setupDisplay(true, globalLedBrightness);
+  update_all_leds(globalLedColour);
 }
 
 String sendHtml()
@@ -301,10 +301,12 @@ void bootSSID(){
 void setup(){
   // EEPROM settings
 
-  ledColour = EEPROM.read(ledColourAddress);
-  ledBrightness = EEPROM.read(ledBrightnessAddress);
-  led_colour_current = ledColour;
-  led_brightness_current = ledBrightness;
+  EEPROM.begin(51);
+
+  globalLedColour = EEPROM.read(globalLedColourAddress);
+  globalLedBrightness = EEPROM.read(globalLedBrightnessAddress);
+  led_colour_current = globalLedColour;
+  led_brightness_current = globalLedBrightness;
 
   Serial.begin(115200);
 
@@ -363,15 +365,15 @@ void loop() {
     update_bar(round(translated));
   }
 
-  if (led_colour_current != ledColour) {
+  if (led_colour_current != globalLedColour) {
 
-    led_colour_current = ledColour;
+    led_colour_current = globalLedColour;
     update_leds();
   }
 
-  if (led_brightness_current != ledBrightness) {
+  if (led_brightness_current != globalLedBrightness) {
 
-    led_brightness_current = ledBrightness;
+    led_brightness_current = globalLedBrightness;
     update_leds();
   }
 
