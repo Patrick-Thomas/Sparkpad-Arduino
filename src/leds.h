@@ -109,16 +109,10 @@ void update_leds() {
 
   for (byte i = 0; i < 12; i++) {
 
-    // Serial.print("Switch: ");
-    // Serial.print(i);
-    // Serial.print(" ");
-
     byte colour = 0;
 
     if (localLightingMode[i] == 0) colour = globalLedColour;
     else colour = localLedColour[i];
-
-    // Serial.println(colour);
 
     update_led(i, colour);
   }
@@ -141,4 +135,36 @@ void setupDisplay(boolean active, byte intensity)
   #elif ESP32
   sendCommand(TM16XX_CMD_DISPLAY | (active ? 8 : 0) | _min(7, intensity));
   #endif
+}
+
+void LEDS_setup() {
+
+  pinMode(dataPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(strobePin, OUTPUT);
+
+  digitalWrite(strobePin, HIGH);
+  digitalWrite(clockPin, HIGH);
+
+  setupDisplay(true, globalLedBrightness);
+  update_leds();
+}
+
+void LEDs_loop() {
+
+  if ((global_led_colour_current != globalLedColour) ||
+     (selected_led_colour_current != selectedLedColour) ||
+     (selected_lighting_mode_current != selectedLightingMode)) {
+
+    global_led_colour_current = globalLedColour;
+    selected_led_colour_current = selectedLedColour;
+    selected_lighting_mode_current = selectedLightingMode;
+    update_leds();
+  }
+
+  if (global_led_brightness_current != globalLedBrightness) {
+
+    global_led_brightness_current = globalLedBrightness;
+    setupDisplay(true, globalLedBrightness);
+  }
 }

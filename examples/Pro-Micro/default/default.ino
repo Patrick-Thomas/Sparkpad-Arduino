@@ -8,15 +8,16 @@
  * Files to include
  */
 
-// Extra files - have to be first here because reasons (Arduino and PlatformIO disagree on preprocessor directives?)
+// Non-core files
 #include <Arduino.h>
 #include <HID-Project.h>
 
 // Core files
+#include "eeprom.h"
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
-#include <Keypad.h>
+#include "keypad.h"
 
 /*
  * Definitions
@@ -55,33 +56,33 @@
 #endif
 
 /*
- * Firmware begins here
+ * Bar graph behaviour
  */
 
-const byte ROWS = 4;
-const byte COLS = 4;
-char keys[ROWS][COLS] = {
-  {'0','3','6','9'},
-  {'1','4','7',':'},
-  {'2','5','8',';'},
-  {'A','B','C','D'}
-};
+void bar_value_changed() {
 
-#ifdef PROTOTYPE_PCB
-byte rowPins[ROWS] = {20, 16, 10, 14};
-byte colPins[COLS] = {19, 18, 15, 21};
-#else
-byte rowPins[ROWS] = {5, 15, 9, 8};
-byte colPins[COLS] = {6, 7, 18, 4};
-#endif
+  float translated = bar_value * (10.0 / VOLUME_RANGE);
+  update_bar(round(translated));
+}
 
-Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
+/*
+ * Knob behaviour
+ */
 
-long previous_bar_value;
+void knob_increase() {
 
-void knob_button()
-{
+  Consumer.write(KNOB_INCREASE);
+}
+
+void knob_decrease() {
+
+  Consumer.write(KNOB_DECREASE);
+}
+
+void knob_button() {
+
   Consumer.press(KNOB_BUTTON);
+
   if (bar_value != 0)
   {
     previous_bar_value = bar_value;
@@ -92,9 +93,12 @@ void knob_button()
     bar_value = previous_bar_value;
   }
 
-  float translated = bar_value * (10.0 / VOLUME_RANGE);
-  update_bar(round(translated));
+  bar_value_changed();
 }
+
+/*
+ * Keypad behaviour
+ */
 
 void keyEventListener(KeypadEvent key, KeyState kpadState) {
   
@@ -158,8 +162,7 @@ void keyEventListener(KeypadEvent key, KeyState kpadState) {
 void setup(){
 
   // EEPROM settings
-  EEPROM_init();
-  bar_value = EEPROM.read(bar_address);
+  EEPROM_setup();
 
   // Keyboard
   Keyboard.begin();
@@ -180,19 +183,10 @@ void setup(){
 //  nav.doOutput();
 
   // LEDs
-  pinMode(dataPin, OUTPUT);
-  pinMode(clockPin, OUTPUT);
-  pinMode(strobePin, OUTPUT);
-  
-  digitalWrite(strobePin, HIGH);
-  digitalWrite(clockPin, HIGH);
+  LEDS_setup();
 
-  setupDisplay(true, globalLedBrightness);
-  update_leds();
-
-  // update the led bar
-  float translated = bar_value * (10.0 / VOLUME_RANGE);
-  update_bar(round(translated));
+  // Bar graph
+  bar_value_changed();
 }
 
 void loop() {
@@ -203,28 +197,22 @@ void loop() {
 
   if (knob_value_new != knob_value) {
 
-    // if (knob_value_new > knob_value) Consumer.write(KNOB_INCREASE);
-    // else Consumer.write(KNOB_DECREASE);
+    if (knob_value_new > knob_value) knob_increase();
+    else knob_decrease();
 
-    bar_value = min(max(0, bar_value + (knob_value_new - knob_value)),VOLUME_RANGE);
+    byte bar_value_new = min(max(0, bar_value + (knob_value_new - knob_value)),VOLUME_RANGE);
     knob_value = knob_value_new;
-    float translated = bar_value*(10.0/VOLUME_RANGE);
-    update_bar(round(translated));
+
+    if (bar_value_new != bar_value) {
+
+      bar_value = bar_value_new;
+
+      bar_value_changed();
+      // save_bar_value(); this currently crashes
+    }
+
+    bar_value_changed();
   }
 
-  if ((global_led_colour_current != globalLedColour) ||
-     (selected_led_colour_current != selectedLedColour) ||
-     (selected_lighting_mode_current != selectedLightingMode)) {
-
-    global_led_colour_current = globalLedColour;
-    selected_led_colour_current = selectedLedColour;
-    selected_lighting_mode_current = selectedLightingMode;
-    update_leds();
-  }
-
-  if (global_led_brightness_current != globalLedBrightness) {
-
-    global_led_brightness_current = globalLedBrightness;
-    setupDisplay(true, globalLedBrightness);
-  }
+  LEDs_loop();
 }

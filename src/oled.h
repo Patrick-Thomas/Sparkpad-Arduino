@@ -1,10 +1,8 @@
-#include <Arduino.h>
 #include <menu.h>
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include <menuIO/SSD1306AsciiOut.h>
 #include <menuIO/serialIO.h>
-#include <EEPROM.h>
 
 using namespace Menu;
 
@@ -29,193 +27,16 @@ SSD1306AsciiWire oled;
 #define fontH 8
 #endif
 
-/*
- * LED settings
- */
-
-// EEPROM memory addresses
-byte globalLedColourAddress = 0;
-byte globalLedBrightnessAddress = 1;
-byte localLedColourAddress = 3;
-byte localLightingModeAddress = 15;
-byte localSwitchModeAddress = 27;
-byte localDelayAddress = 39;
-byte selectedIndexAddress = 51;
-byte freshByteAddress = 52;
-
-// Values to update
-byte globalLedColour = 0;
-byte globalLedBrightness = 0;
-byte localLedColour[12] = {0};
-byte localLightingMode[12] = {0};
-byte localSwitchMode[12] = {0};
-byte localDelay[12] = {0};
-byte selectedIndex = 0;
-byte selectedLedColour = 0;
-byte selectedLightingMode = 0;
-byte selectedSwitchMode = 0;
-byte selectedDelay = 0;
-
-// To detect value changes
-byte global_led_colour_current = 0;
-byte global_led_brightness_current = 0;
-byte selected_led_colour_current = 0;
-byte selected_lighting_mode_current = 0;
-
-void update_leds();
-void update_led(byte number, byte RGB);
-
-/*
-Add three more menus on the oled screen, 12 entries each
-- one menu for individual switch colour 
-- one menu for lighting mode
-- one menu for switch mode
-
-lighting modes
-
--- global (switch is the global colour)
--- individual
-
-switch mode
-
--- static
--- toggle
--- delay 
-
-delay setting
-
-8 bit value in seconds
-
-*/
-
 result saver() {
 
-  EEPROM.write(globalLedColourAddress, globalLedColour);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(globalLedBrightnessAddress, globalLedBrightness);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(localLedColourAddress + selectedIndex, selectedLedColour);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(localLightingModeAddress + selectedIndex, selectedLightingMode);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(localSwitchModeAddress + selectedIndex, selectedSwitchMode);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(localDelayAddress + selectedIndex, selectedDelay);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
-  EEPROM.write(selectedIndexAddress, selectedIndex);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
+  EEPROM_save();
   return proceed;
 }
 
 result loader() {
 
-  selectedLedColour = localLedColour[selectedIndex];
-  selectedLightingMode = localLightingMode[selectedIndex];
-  selectedSwitchMode = localSwitchMode[selectedIndex];
-  selectedDelay = localDelay[selectedIndex];
-
-  EEPROM.write(selectedIndexAddress, selectedIndex);
-  #ifdef ESP32
-  EEPROM.commit();
-  #endif
-
+  EEPROM_load();
   return proceed;
-}
-
-byte fresh_check(byte input) {
-
-  return input == 255 ? 0 : input;
-}
-
-void EEPROM_init() {
-
-  // This should only run for a fresh Sparkpad
-  if (EEPROM.read(freshByteAddress) == 255) {
-
-    EEPROM.write(globalLedColourAddress, 0);
-    #ifdef ESP32
-    EEPROM.commit();
-    #endif
-
-    EEPROM.write(globalLedBrightnessAddress, 0);
-    #ifdef ESP32
-    EEPROM.commit();
-    #endif
-
-    EEPROM.write(selectedIndexAddress, 0);
-    #ifdef ESP32
-    EEPROM.commit();
-    #endif
-
-    for (int i = 0; i < 12; i++) {
-
-      EEPROM.write(localLedColourAddress + i, 0);
-      #ifdef ESP32
-      EEPROM.commit();
-      #endif
-
-      EEPROM.write(localLightingModeAddress + i, 0);
-      #ifdef ESP32
-      EEPROM.commit();
-      #endif
-
-      EEPROM.write(localSwitchModeAddress + i, 0);
-      #ifdef ESP32
-      EEPROM.commit();
-      #endif
-
-      EEPROM.write(localDelayAddress + i, 0);
-      #ifdef ESP32
-      EEPROM.commit();
-      #endif
-    }
-
-    EEPROM.write(freshByteAddress, 0);
-    #ifdef ESP32
-    EEPROM.commit();
-    #endif
-  }
-
-  globalLedColour = EEPROM.read(globalLedColourAddress);
-  globalLedBrightness = EEPROM.read(globalLedBrightnessAddress);
-  global_led_colour_current = globalLedColour;
-  global_led_brightness_current = globalLedBrightness;
-
-  selectedIndex = EEPROM.read(selectedIndexAddress);
-
-  for (int i = 0; i < 12; i++) {
-
-    localLedColour[i] = EEPROM.read(localLedColourAddress + i);
-    localLightingMode[i] = EEPROM.read(localLightingModeAddress + i);
-    localSwitchMode[i] = EEPROM.read(localSwitchModeAddress + i);
-    localDelay[i] = EEPROM.read(localDelayAddress + i);
-  }
-
-  selectedLedColour = localLedColour[selectedIndex];
-  selectedLightingMode = localLightingMode[selectedIndex];
-  selectedSwitchMode = localSwitchMode[selectedIndex];
-  selectedDelay = localDelay[selectedIndex];
 }
 
 MENU(mainMenu,"LED settings",doNothing,noEvent,wrapStyle
