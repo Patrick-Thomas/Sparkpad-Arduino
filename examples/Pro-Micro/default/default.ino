@@ -155,19 +155,10 @@ void keyEventListener(KeypadEvent key, KeyState kpadState) {
   }
 }
 
-void update_leds() {
-
-  setupDisplay(true, ledBrightness);
-  update_all_leds(ledColour);
-}
-
 void setup(){
 
   // EEPROM settings
-  ledColour = EEPROM.read(ledColourAddress);
-  ledBrightness = EEPROM.read(ledBrightnessAddress);
-  led_colour_current = ledColour;
-  led_brightness_current = ledBrightness;
+  EEPROM_init();
   bar_value = EEPROM.read(bar_address);
 
   // Keyboard
@@ -196,6 +187,7 @@ void setup(){
   digitalWrite(strobePin, HIGH);
   digitalWrite(clockPin, HIGH);
 
+  setupDisplay(true, globalLedBrightness);
   update_leds();
 
   // update the led bar
@@ -211,8 +203,8 @@ void loop() {
 
   if (knob_value_new != knob_value) {
 
-    if (knob_value_new > knob_value) Consumer.write(KNOB_INCREASE);
-    else Consumer.write(KNOB_DECREASE);
+    // if (knob_value_new > knob_value) Consumer.write(KNOB_INCREASE);
+    // else Consumer.write(KNOB_DECREASE);
 
     bar_value = min(max(0, bar_value + (knob_value_new - knob_value)),VOLUME_RANGE);
     knob_value = knob_value_new;
@@ -220,15 +212,19 @@ void loop() {
     update_bar(round(translated));
   }
 
-  if (led_colour_current != ledColour) {
+  if ((global_led_colour_current != globalLedColour) ||
+     (selected_led_colour_current != selectedLedColour) ||
+     (selected_lighting_mode_current != selectedLightingMode)) {
 
-    led_colour_current = ledColour;
+    global_led_colour_current = globalLedColour;
+    selected_led_colour_current = selectedLedColour;
+    selected_lighting_mode_current = selectedLightingMode;
     update_leds();
   }
 
-  if (led_brightness_current != ledBrightness) {
+  if (global_led_brightness_current != globalLedBrightness) {
 
-    led_brightness_current = ledBrightness;
-    update_leds();
+    global_led_brightness_current = globalLedBrightness;
+    setupDisplay(true, globalLedBrightness);
   }
 }

@@ -74,19 +74,19 @@ void update_led(byte number, byte RGB) {
   byte grid = number < 6 ? 4 : 10;
 
   if (RGB & 0x1) grid_array[grid] |= 1 << seg;
-  else grid_array[grid] &= !(1 << seg);
+  else grid_array[grid] &= ~(1 << seg);
 
   // green LED
   grid = number < 6 ? 0 : 6;
 
   if (RGB & 0x2) grid_array[grid] |= 1 << seg;
-  else grid_array[grid] &= !(1 << seg);
+  else grid_array[grid] &= ~(1 << seg);
 
   // blue LED
   grid = number < 6 ? 2 : 8;
 
   if (RGB & 0x4) grid_array[grid] |= 1 << seg;
-  else grid_array[grid] &= !(1 << seg);
+  else grid_array[grid] &= ~(1 << seg);
 
   update_tm1638();
 }
@@ -96,6 +96,31 @@ void update_all_leds(byte RGB) {
   for (int i = 0; i < 12; i++) {
 
     update_led(i, RGB);
+  }
+}
+
+void update_leds() {
+
+  // take into account the selected switch
+  localLedColour[selectedIndex] = selectedLedColour;
+  localLightingMode[selectedIndex] = selectedLightingMode;
+  localSwitchMode[selectedIndex] = selectedSwitchMode;
+  localDelay[selectedIndex] = selectedDelay;
+
+  for (byte i = 0; i < 12; i++) {
+
+    // Serial.print("Switch: ");
+    // Serial.print(i);
+    // Serial.print(" ");
+
+    byte colour = 0;
+
+    if (localLightingMode[i] == 0) colour = globalLedColour;
+    else colour = localLedColour[i];
+
+    // Serial.println(colour);
+
+    update_led(i, colour);
   }
 }
 

@@ -15,7 +15,7 @@ SSD1306AsciiWire oled;
 #define FIRST_LINE 0 //text position for first line
 #define SECOND_LINE 1 //text position for second line
 
-#define LARGE_FONT Verdana12
+//#define LARGE_FONT Verdana12
 
  /*Do not change the values(recomended)*/
 #ifdef LARGE_FONT
@@ -33,24 +33,37 @@ SSD1306AsciiWire oled;
  * LED settings
  */
 
+// EEPROM memory addresses
 byte globalLedColourAddress = 0;
 byte globalLedBrightnessAddress = 1;
-
-byte globalLedColour = 0;
-byte globalLedBrightness = 0;
-
-byte led_colour_current = 0;
-byte led_brightness_current = 0;
-
-byte localLedColour[12] = {};
-byte localLightingMode[12] = {};
-byte localSwitchMode[12] = {};
-byte localDelay[12] = {};
-
 byte localLedColourAddress = 3;
 byte localLightingModeAddress = 15;
 byte localSwitchModeAddress = 27;
 byte localDelayAddress = 39;
+byte selectedIndexAddress = 51;
+byte freshByteAddress = 52;
+
+// Values to update
+byte globalLedColour = 0;
+byte globalLedBrightness = 0;
+byte localLedColour[12] = {0};
+byte localLightingMode[12] = {0};
+byte localSwitchMode[12] = {0};
+byte localDelay[12] = {0};
+byte selectedIndex = 0;
+byte selectedLedColour = 0;
+byte selectedLightingMode = 0;
+byte selectedSwitchMode = 0;
+byte selectedDelay = 0;
+
+// To detect value changes
+byte global_led_colour_current = 0;
+byte global_led_brightness_current = 0;
+byte selected_led_colour_current = 0;
+byte selected_lighting_mode_current = 0;
+
+void update_leds();
+void update_led(byte number, byte RGB);
 
 /*
 Add three more menus on the oled screen, 12 entries each
@@ -75,136 +88,144 @@ delay setting
 
 */
 
-
-result adjustGlobalColour() {
+result saver() {
 
   EEPROM.write(globalLedColourAddress, globalLedColour);
+  #ifdef ESP32
   EEPROM.commit();
-  return proceed;
-}
-
-result adjustGlobalBrightness() {
+  #endif
 
   EEPROM.write(globalLedBrightnessAddress, globalLedBrightness);
+  #ifdef ESP32
   EEPROM.commit();
+  #endif
+
+  EEPROM.write(localLedColourAddress + selectedIndex, selectedLedColour);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  EEPROM.write(localLightingModeAddress + selectedIndex, selectedLightingMode);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  EEPROM.write(localSwitchModeAddress + selectedIndex, selectedSwitchMode);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  EEPROM.write(localDelayAddress + selectedIndex, selectedDelay);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  EEPROM.write(selectedIndexAddress, selectedIndex);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
   return proceed;
 }
 
-result adjustLocalColour() {
+result loader() {
+
+  selectedLedColour = localLedColour[selectedIndex];
+  selectedLightingMode = localLightingMode[selectedIndex];
+  selectedSwitchMode = localSwitchMode[selectedIndex];
+  selectedDelay = localDelay[selectedIndex];
+
+  EEPROM.write(selectedIndexAddress, selectedIndex);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  return proceed;
+}
+
+byte fresh_check(byte input) {
+
+  return input == 255 ? 0 : input;
+}
+
+void EEPROM_init() {
+
+  // This should only run for a fresh Sparkpad
+  if (EEPROM.read(freshByteAddress) == 255) {
+
+    EEPROM.write(globalLedColourAddress, 0);
+    #ifdef ESP32
+    EEPROM.commit();
+    #endif
+
+    EEPROM.write(globalLedBrightnessAddress, 0);
+    #ifdef ESP32
+    EEPROM.commit();
+    #endif
+
+    EEPROM.write(selectedIndexAddress, 0);
+    #ifdef ESP32
+    EEPROM.commit();
+    #endif
+
+    for (int i = 0; i < 12; i++) {
+
+      EEPROM.write(localLedColourAddress + i, 0);
+      #ifdef ESP32
+      EEPROM.commit();
+      #endif
+
+      EEPROM.write(localLightingModeAddress + i, 0);
+      #ifdef ESP32
+      EEPROM.commit();
+      #endif
+
+      EEPROM.write(localSwitchModeAddress + i, 0);
+      #ifdef ESP32
+      EEPROM.commit();
+      #endif
+
+      EEPROM.write(localDelayAddress + i, 0);
+      #ifdef ESP32
+      EEPROM.commit();
+      #endif
+    }
+
+    EEPROM.write(freshByteAddress, 0);
+    #ifdef ESP32
+    EEPROM.commit();
+    #endif
+  }
+
+  globalLedColour = EEPROM.read(globalLedColourAddress);
+  globalLedBrightness = EEPROM.read(globalLedBrightnessAddress);
+  global_led_colour_current = globalLedColour;
+  global_led_brightness_current = globalLedBrightness;
+
+  selectedIndex = EEPROM.read(selectedIndexAddress);
 
   for (int i = 0; i < 12; i++) {
 
-    EEPROM.write(localLedColourAddress + i, localLedColour[i]);
-    EEPROM.commit();
+    localLedColour[i] = EEPROM.read(localLedColourAddress + i);
+    localLightingMode[i] = EEPROM.read(localLightingModeAddress + i);
+    localSwitchMode[i] = EEPROM.read(localSwitchModeAddress + i);
+    localDelay[i] = EEPROM.read(localDelayAddress + i);
   }
 
-  return proceed;
+  selectedLedColour = localLedColour[selectedIndex];
+  selectedLightingMode = localLightingMode[selectedIndex];
+  selectedSwitchMode = localSwitchMode[selectedIndex];
+  selectedDelay = localDelay[selectedIndex];
 }
-
-result adjustLightingMode() {
-
-  for (int i = 0; i < 12; i++) {
-
-    EEPROM.write(localLightingModeAddress + i, localLightingMode[i]);
-    EEPROM.commit();
-  }
-
-  return proceed;
-}
-
-result adjustSwitchMode() {
-
-  for (int i = 0; i < 12; i++) {
-
-    EEPROM.write(localSwitchModeAddress + i, localSwitchMode[i]);
-    EEPROM.commit();
-  }
-
-  return proceed;
-}
-
-result adjustDelay() {
-
-  for (int i = 0; i < 12; i++) {
-
-    EEPROM.write(localDelayAddress + i, localDelay[i]);
-    EEPROM.commit();
-  }
-
-  return proceed;
-}
-
-MENU(localLedColourMenu,"Switch LED colour",doNothing,noEvent,wrapStyle
-  ,FIELD(localLedColour[0],"Switch 1 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[1],"Switch 2 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[2],"Switch 3 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[3],"Switch 4 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[4],"Switch 5 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[5],"Switch 6 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[6],"Switch 7 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[7],"Switch 8 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[8],"Switch 9 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[9],"Switch 10 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[10],"Switch 11 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,FIELD(localLedColour[11],"Switch 12 colour","",0,7,1,0,adjustLocalColour,exitEvent,noStyle)
-  ,EXIT("Back")
-  );
-
-MENU(localLightingModeMenu,"Switch LED mode",doNothing,noEvent,wrapStyle
-  ,FIELD(localLightingMode[0],"Switch 1 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[1],"Switch 2 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[2],"Switch 3 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[3],"Switch 4 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[4],"Switch 5 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[5],"Switch 6 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[6],"Switch 7 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[7],"Switch 8 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[8],"Switch 9 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[9],"Switch 10 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[10],"Switch 11 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,FIELD(localLightingMode[11],"Switch 12 LED mode","",0,1,1,0,adjustLightingMode,exitEvent,noStyle)
-  ,EXIT("Back")
-  );
-
-MENU(localSwitchModeMenu,"Switch mode",doNothing,noEvent,wrapStyle
-  ,FIELD(localSwitchMode[0],"Switch 1 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[1],"Switch 2 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[2],"Switch 3 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[3],"Switch 4 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[4],"Switch 5 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[5],"Switch 6 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[6],"Switch 7 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[7],"Switch 8 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[8],"Switch 9 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[9],"Switch 10 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[10],"Switch 11 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,FIELD(localSwitchMode[11],"Switch 12 mode","",0,2,1,0,adjustSwitchMode,exitEvent,noStyle)
-  ,EXIT("Back")
-  );
-
-MENU(localDelayMenu,"Delay settings",doNothing,noEvent,wrapStyle
-  ,FIELD(localDelay[0],"Switch 1 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[1],"Switch 2 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[2],"Switch 3 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[3],"Switch 4 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[4],"Switch 5 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[5],"Switch 6 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[6],"Switch 7 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[7],"Switch 8 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[8],"Switch 9 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[9],"Switch 10 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[10],"Switch 11 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,FIELD(localDelay[11],"Switch 12 delay","s",0,255,1,0,adjustDelay,exitEvent,noStyle)
-  ,EXIT("Back")
-  );
 
 MENU(mainMenu,"LED settings",doNothing,noEvent,wrapStyle
-  ,FIELD(globalLedColour,"Colour","",0,7,1,0,adjustGlobalColour,exitEvent,noStyle)
-  ,FIELD(globalLedBrightness,"Brightness","",0,7,1,0,adjustGlobalBrightness,exitEvent,noStyle)
-  ,SUBMENU(localLedColourMenu)
-  ,SUBMENU(localLightingModeMenu)
-  ,SUBMENU(localSwitchModeMenu)
-  ,SUBMENU(localDelayMenu)
+  ,FIELD(globalLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
+  ,FIELD(globalLedBrightness,"Brightness","",0,7,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedIndex,"Switch","",0,11,1,0,loader,exitEvent,noStyle)
+  ,FIELD(selectedLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedLightingMode,"Lighting mode","",0,1,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedSwitchMode,"Switch mode","",0,2,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedDelay,"Delay","s",0,255,1,0,saver,exitEvent,noStyle)
   ,EXIT("Hide")
   );
 

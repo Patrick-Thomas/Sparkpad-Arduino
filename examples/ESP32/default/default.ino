@@ -12,6 +12,9 @@
  * Files to include
  */
 
+#include <WiFi.h>
+#include <WebServer.h>
+
 // Core files
 #include "oled.h"
 #include "knob.h"
@@ -19,8 +22,8 @@
 #include <Keypad.h>
 
 // Extra files
-#include <WiFi.h>
-#include <WebServer.h>
+// #include <WiFi.h>
+// #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <FS.h>
 #include "SPIFFS.h"
@@ -74,7 +77,7 @@ WebServer server(80);
 
 String configPath = "/WiFiSettings.json";
 
-    /*
+/*
  * Firmware begins here
  */
 
@@ -135,12 +138,6 @@ void keyEventListener(KeypadEvent key, KeyState kpadState) {
         break;
     }
   }
-}
-
-void update_leds() {
-
-  setupDisplay(true, globalLedBrightness);
-  update_all_leds(globalLedColour);
 }
 
 String sendHtml()
@@ -299,14 +296,11 @@ void bootSSID(){
 }
 
 void setup(){
+  
   // EEPROM settings
-
-  EEPROM.begin(51);
-
-  globalLedColour = EEPROM.read(globalLedColourAddress);
-  globalLedBrightness = EEPROM.read(globalLedBrightnessAddress);
-  led_colour_current = globalLedColour;
-  led_brightness_current = globalLedBrightness;
+  EEPROM.begin(53);
+  EEPROM_init();
+  bar_value = EEPROM.read(bar_address);
 
   Serial.begin(115200);
 
@@ -330,6 +324,7 @@ void setup(){
   digitalWrite(strobePin, HIGH);
   digitalWrite(clockPin, HIGH);
 
+  setupDisplay(true, globalLedBrightness);
   update_leds();
 
   // SPIFFS
@@ -365,16 +360,20 @@ void loop() {
     update_bar(round(translated));
   }
 
-  if (led_colour_current != globalLedColour) {
+  if ((global_led_colour_current != globalLedColour) ||
+     (selected_led_colour_current != selectedLedColour) ||
+     (selected_lighting_mode_current != selectedLightingMode)) {
 
-    led_colour_current = globalLedColour;
+    global_led_colour_current = globalLedColour;
+    selected_led_colour_current = selectedLedColour;
+    selected_lighting_mode_current = selectedLightingMode;
     update_leds();
   }
 
-  if (led_brightness_current != globalLedBrightness) {
+  if (global_led_brightness_current != globalLedBrightness) {
 
-    led_brightness_current = globalLedBrightness;
-    update_leds();
+    global_led_brightness_current = globalLedBrightness;
+    setupDisplay(true, globalLedBrightness);
   }
 
   // Wifi Server
