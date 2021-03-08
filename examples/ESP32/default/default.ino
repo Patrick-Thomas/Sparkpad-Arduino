@@ -13,19 +13,20 @@
  */
 
 // Non-core files
+#include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <FS.h>
 #include "SPIFFS.h"
-#include "wifi.h"
 
 // Core files
 #include "eeprom.h"
+#include "leds.h"
 #include "oled.h"
 #include "knob.h"
-#include "leds.h"
-#include "keypad.h"
+#include "sparkpad_keypad.h"
+#include "sparkpad_wifi.h"
 
 /*
  * Definitions

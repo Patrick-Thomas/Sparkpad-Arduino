@@ -1,3 +1,5 @@
+#ifndef SP_EEPROM
+#define SP_EEPROM
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -173,3 +175,4 @@ void EEPROM_setup() {
 
   bar_value = EEPROM.read(bar_address);
 }
+#endif

@@ -1,3 +1,6 @@
+#ifndef SP_KNOB
+#define SP_KNOB
+#include <Arduino.h>
 #include <Encoder.h>
 
 #ifdef ARDUINO_AVR_LEONARDO
@@ -18,4 +21,5 @@ Encoder knob(13, 14);
 
 #else
 #error this board is not supported! Must be Arduino Leonardo or ESP32
+#endif
 #endif

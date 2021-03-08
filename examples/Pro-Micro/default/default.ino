@@ -17,7 +17,7 @@
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
-#include "keypad.h"
+#include "sparkpad_keypad.h"
 
 /*
  * Definitions

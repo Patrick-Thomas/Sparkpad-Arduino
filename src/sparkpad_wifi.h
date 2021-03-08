@@ -1,3 +1,12 @@
+#ifndef SP_WIFI
+#define SP_WIFI
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+#include "SPIFFS.h"
 #define FORMAT_SPIFFS_IF_FAILED true
 
 const char* ssid = "sparkpad-test";
@@ -293,3 +302,4 @@ void WIFI_loop() {
     // delay(10000);
     // Serial.println("WiFi Status: " + WiFi.status());
 }
+#endif

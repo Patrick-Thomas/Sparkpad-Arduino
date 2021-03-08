@@ -1,8 +1,12 @@
+#ifndef SP_OLED
+#define SP_OLED
+#include <Arduino.h>
 #include <menu.h>
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include <menuIO/SSD1306AsciiOut.h>
 #include <menuIO/serialIO.h>
+#include "eeprom.h"
 
 using namespace Menu;
 
@@ -69,3 +73,4 @@ outputsList out(outputs, 1); //outputs list
 serialIn serial(Serial);
 
 NAVROOT(nav,mainMenu,MAX_DEPTH,serial,out);
+#endif
