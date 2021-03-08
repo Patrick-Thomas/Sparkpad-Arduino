@@ -66,6 +66,7 @@ String sendConfigHtml(String name, String pass)
   ptr += "<body>\n";
   ptr += "<h1>Sparkpad Config Edditor</h1>\n";
   ptr += "<h3>Update your settings from here</h3>\n";
+  ptr += "<h2><a href='/'>Home</a></h2>\n";
   ptr += "<form action='configSet'>";
   ptr += "<input type='text' name='name' value='" + name + "' />";
   ptr += "<input type='password' name='pass' value='" + pass + "' />";
