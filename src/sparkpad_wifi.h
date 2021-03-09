@@ -1,3 +1,12 @@
+#ifndef SP_WIFI
+#define SP_WIFI
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+#include "SPIFFS.h"
 #define FORMAT_SPIFFS_IF_FAILED true
 
 const char* ssid = "sparkpad-test";
@@ -57,6 +66,7 @@ String sendConfigHtml(String name, String pass)
   ptr += "<body>\n";
   ptr += "<h1>Sparkpad Config Edditor</h1>\n";
   ptr += "<h3>Update your settings from here</h3>\n";
+  ptr += "<h2><a href='/'>Home</a></h2>\n";
   ptr += "<form action='configSet'>";
   ptr += "<input type='text' name='name' value='" + name + "' />";
   ptr += "<input type='password' name='pass' value='" + pass + "' />";
@@ -293,3 +303,4 @@ void WIFI_loop() {
     // delay(10000);
     // Serial.println("WiFi Status: " + WiFi.status());
 }
+#endif

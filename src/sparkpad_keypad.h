@@ -1,3 +1,6 @@
+#ifndef SP_KEYPAD
+#define SP_KEYPAD
+#include <Arduino.h>
 #include <Keypad.h>
 
 const byte ROWS = 4;
@@ -34,3 +37,4 @@ byte colPins[COLS] = {17, 18, 27, 4};
 #endif
 
 Keypad keypad = Keypad( makeKeymap(keys), colPins, rowPins, ROWS, COLS );
+#endif

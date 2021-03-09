@@ -1,3 +1,7 @@
+#ifndef SP_LED
+#define SP_LED
+#include <Arduino.h>
+#include "eeprom.h"
 #define TM16XX_CMD_DATA_AUTO 0x40
 #define TM16XX_CMD_DATA_READ 0x42      // command to read data used on two wire interfaces of TM1637
 #define TM16XX_CMD_DATA_FIXED 0x44
@@ -168,3 +172,4 @@ void LEDs_loop() {
     setupDisplay(true, globalLedBrightness);
   }
 }
+#endif
