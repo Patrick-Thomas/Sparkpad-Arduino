@@ -2,7 +2,8 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include <menuIO/SSD1306AsciiOut.h>
-#include <menuIO/serialIO.h>
+//#include <menuIO/serialIO.h>
+#include <menuIO/chainStream.h>
 
 using namespace Menu;
 
@@ -34,19 +35,24 @@ result saver() {
 }
 
 result loader() {
-
+  
   EEPROM_load();
   return proceed;
 }
+
+MENU(advancedMenu, "Switch settings",doNothing,noEvent,wrapStyle
+  ,FIELD(selectedLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedLightingMode,"Lighting mode","",0,1,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedSwitchMode,"Switch mode","",0,2,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedDelay,"Delay","s",0,255,1,0,saver,exitEvent,noStyle)
+  ,EXIT("<Back")
+  );
 
 MENU(mainMenu,"LED settings",doNothing,noEvent,wrapStyle
   ,FIELD(globalLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
   ,FIELD(globalLedBrightness,"Brightness","",0,7,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedIndex,"Switch","",0,11,1,0,loader,exitEvent,noStyle)
-  ,FIELD(selectedLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
-  ,FIELD(selectedLightingMode,"Lighting mode","",0,1,1,0,saver,exitEvent,noStyle)
-  ,FIELD(selectedSwitchMode,"Switch mode","",0,2,1,0,saver,exitEvent,noStyle)
-  ,FIELD(selectedDelay,"Delay","s",0,255,1,0,saver,exitEvent,noStyle)
+  ,SUBMENU(advancedMenu)
   ,EXIT("Hide")
   );
 
@@ -66,6 +72,7 @@ menuOut* constMEM outputs[]  MEMMODE  = {&outOLED}; //list of output devices
 outputsList out(outputs, 1); //outputs list
 
 //stringIn<0> strIn;//buffer size: 2^5 = 32 bytes, eventually use 0 for a single byte
-serialIn serial(Serial);
+// serialIn serial(Serial);
+chainStream<0> in(NULL);
 
-NAVROOT(nav,mainMenu,MAX_DEPTH,serial,out);
+NAVROOT(nav,mainMenu,MAX_DEPTH,in,out);

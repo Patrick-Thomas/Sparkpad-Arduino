@@ -21,7 +21,7 @@
 #include "wifi.h"
 
 // Core files
-#include "eeprom.h"
+//#include "eeprom.h"
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"

@@ -1,5 +1,5 @@
 #define TM16XX_CMD_DATA_AUTO 0x40
-#define TM16XX_CMD_DATA_READ 0x42      // command to read data used on two wire interfaces of TM1637
+#define TM16XX_CMD_DATA_READ 0x42
 #define TM16XX_CMD_DATA_FIXED 0x44
 #define TM16XX_CMD_DISPLAY 0x80
 #define TM16XX_CMD_ADDRESS 0xC0
@@ -101,20 +101,33 @@ void update_all_leds(byte RGB) {
 
 void update_leds() {
 
-  // take into account the selected switch
-  localLedColour[selectedIndex] = selectedLedColour;
-  localLightingMode[selectedIndex] = selectedLightingMode;
-  localSwitchMode[selectedIndex] = selectedSwitchMode;
-  localDelay[selectedIndex] = selectedDelay;
-
   for (byte i = 0; i < 12; i++) {
 
-    byte colour = 0;
+    byte my_colour = localLedColour[i];
+    byte my_lighting_mode = localLightingMode[i];
+    byte my_switch_mode = localSwitchMode[i];
+    byte my_state = switchActive[i];
 
-    if (localLightingMode[i] == 0) colour = globalLedColour;
-    else colour = localLedColour[i];
+    // static
+    if (my_switch_mode == 0) {
 
-    update_led(i, colour);
+      if (my_lighting_mode == 1) update_led(i, my_colour);
+      else update_led(i, globalLedColour);
+    }
+
+    // toggle, delay, hold
+    else {
+
+      // active
+      if (my_state == 1) {
+
+        if (my_lighting_mode == 1) update_led(i, my_colour);
+        else update_led(i, globalLedColour);
+      }
+
+      // inactive
+      else update_led(i, 0);
+    }
   }
 }
 
@@ -152,19 +165,25 @@ void LEDS_setup() {
 
 void LEDs_loop() {
 
-  if ((global_led_colour_current != globalLedColour) ||
-     (selected_led_colour_current != selectedLedColour) ||
-     (selected_lighting_mode_current != selectedLightingMode)) {
+  // save modified values to the local arrays
+  if (selected_index_current != selectedIndex) {
 
-    global_led_colour_current = globalLedColour;
-    selected_led_colour_current = selectedLedColour;
-    selected_lighting_mode_current = selectedLightingMode;
-    update_leds();
+    selected_index_current = selectedIndex;
+    EEPROM_load();
   }
 
+  localLedColour[selectedIndex] = selectedLedColour;
+  localLightingMode[selectedIndex] = selectedLightingMode;
+  localSwitchMode[selectedIndex] = selectedSwitchMode;
+  localDelay[selectedIndex] = selectedDelay;
+
+  // update the brightness
   if (global_led_brightness_current != globalLedBrightness) {
 
     global_led_brightness_current = globalLedBrightness;
     setupDisplay(true, globalLedBrightness);
   }
+
+  // refresh the LEDs
+  update_leds();
 }

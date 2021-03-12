@@ -3,9 +3,9 @@
 #ifdef ARDUINO_AVR_LEONARDO
 
 #ifdef PROTOTYPE_PCB
-Encoder knob(5, 4);
+Encoder knob(1, 0);
 #else
-Encoder knob(20, 19);
+Encoder knob(0, 1);
 #endif
 
 #elif ESP32

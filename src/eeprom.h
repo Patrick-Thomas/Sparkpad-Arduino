@@ -19,6 +19,7 @@ byte localLedColour[12] = {0};
 byte localLightingMode[12] = {0};
 byte localSwitchMode[12] = {0};
 byte localDelay[12] = {0};
+byte switchActive[12] = {0};
 byte selectedIndex = 0;
 byte selectedLedColour = 0;
 byte selectedLightingMode = 0;
@@ -27,19 +28,20 @@ byte selectedDelay = 0;
 byte bar_value = 0;
 
 // To detect value changes
-byte global_led_colour_current = 0;
 byte global_led_brightness_current = 0;
-byte selected_led_colour_current = 0;
-byte selected_lighting_mode_current = 0;
+byte selected_index_current = 0;
+
 long knob_value = 0;
 long previous_bar_value;
 
-void save_bar_value() {
+bool save_bar_value(void *) {
 
   EEPROM.write(bar_address, bar_value);
   #ifdef ESP32
   EEPROM.commit();
   #endif
+
+  return true;
 }
 
 void EEPROM_save() {
@@ -153,10 +155,10 @@ void EEPROM_setup() {
 
   globalLedColour = EEPROM.read(globalLedColourAddress);
   globalLedBrightness = EEPROM.read(globalLedBrightnessAddress);
-  global_led_colour_current = globalLedColour;
   global_led_brightness_current = globalLedBrightness;
-
+  
   selectedIndex = EEPROM.read(selectedIndexAddress);
+  selected_index_current = selectedIndex;
 
   for (int i = 0; i < 12; i++) {
 
