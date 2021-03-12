@@ -27,6 +27,7 @@
 #include "knob.h"
 #include "sparkpad_keypad.h"
 #include "sparkpad_wifi.h"
+#include "sparkpad_obs.h"
 
 /*
  * Definitions
@@ -169,6 +170,9 @@ void setup(){
 
   // Wifi
   WIFI_setup();
+
+  // Obs
+  // Serial.print(getOBSConfig());
 }
 
 /*

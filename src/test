@@ -1,0 +1,10 @@
+   File configFile = SPIFFS.open(configPath, "w");
+    doc["ip"] = "";
+    doc["port"] = "";
+    doc["password"] = "";
+    serializeJson(doc, configFile);
+    serializeJson(doc, Serial);
+    configFile.close();
+    Serial.println("File created, rebooting");
+    delay(3000);
+    ESP.restart();
