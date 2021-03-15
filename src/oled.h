@@ -1,9 +1,14 @@
+#ifndef SP_OLED
+#define SP_OLED
+
+#include <Arduino.h>
 #include <menu.h>
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include <menuIO/SSD1306AsciiOut.h>
-//#include <menuIO/serialIO.h>
 #include <menuIO/chainStream.h>
+
+#include "eeprom.h"
 
 using namespace Menu;
 
@@ -76,3 +81,5 @@ outputsList out(outputs, 1); //outputs list
 chainStream<0> in(NULL);
 
 NAVROOT(nav,mainMenu,MAX_DEPTH,in,out);
+
+#endif

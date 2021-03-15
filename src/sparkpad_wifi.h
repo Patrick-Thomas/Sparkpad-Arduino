@@ -1,3 +1,12 @@
+#ifndef SP_WIFI
+#define SP_WIFI
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <FS.h>
+#include "SPIFFS.h"
 #define FORMAT_SPIFFS_IF_FAILED true
 
 const char* ssid = "sparkpad-test";
@@ -10,6 +19,7 @@ IPAddress subnet(255,255,255,0);
 WebServer server(80);
 
 String configPath = "/WiFiSettings.json";
+String obsConfig = "/ObsSettings.json";
 
 String sendHtml()
 {
@@ -57,6 +67,7 @@ String sendConfigHtml(String name, String pass)
   ptr += "<body>\n";
   ptr += "<h1>Sparkpad Config Edditor</h1>\n";
   ptr += "<h3>Update your settings from here</h3>\n";
+  ptr += "<h2><a href='/'>Home</a></h2>\n";
   ptr += "<form action='configSet'>";
   ptr += "<input type='text' name='name' value='" + name + "' />";
   ptr += "<input type='password' name='pass' value='" + pass + "' />";
@@ -64,6 +75,38 @@ String sendConfigHtml(String name, String pass)
   ptr += "</form>";
   ptr += "<br /><br />";
   ptr += "<a href='/reset'>Reset esp32 config</a>";
+  ptr += "</body>\n";
+  ptr += "</html>\n";
+  return ptr;
+}
+
+String sendObsConfigHtml(String ip, String port, String pass)
+{
+  String ptr = "<!DOCTYPE html> <html>\n";
+  ptr += "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
+  ptr += "<title>Sparkpad OBS Config</title>\n";
+  ptr += "<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
+  ptr += "body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3 {color: #444444;margin-bottom: 50px;}\n";
+  ptr += ".button {display: block;width: 80px;background-color: #3498db;border: none;color: white;padding: 13px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
+  ptr += ".button-on {background-color: #3498db;}\n";
+  ptr += ".button-on:active {background-color: #2980b9;}\n";
+  ptr += ".button-off {background-color: #34495e;}\n";
+  ptr += ".button-off:active {background-color: #2c3e50;}\n";
+  ptr += "p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
+  ptr += "</style>\n";
+  ptr += "</head>\n";
+  ptr += "<body>\n";
+  ptr += "<h1>Sparkpad OBS Config Edditor</h1>\n";
+  ptr += "<h3>Update your OBS settings from here</h3>\n";
+  ptr += "<h2><a href='/'>Home</a></h2>\n";
+  ptr += "<form action='obsConfigSet'>";
+  ptr += "<label>Ip: </label> <input type='text' name='ip' value='" + ip + "' /><br />";
+  ptr += "<label>Port: </label> <input type='text' name='port' value='" + port + "' /><br />";
+  ptr += "<label>Password: </label> <input type='password' name='pass' value='" + pass + "' /> <br />";
+  ptr += "<input type='submit' name='submit' />";
+  ptr += "</form>";
+  ptr += "<br /><br />";
+  ptr += "<a href='/resetObs'>Reset Obs config</a>";
   ptr += "</body>\n";
   ptr += "</html>\n";
   return ptr;
@@ -90,6 +133,7 @@ String sendHomePage()
   ptr += "<br /><br />";
   ptr += "<a href='/reset'>Reset config</a>    ";
   ptr += "<a href='/config'>Edit config</a>";
+  ptr += "<a href='/obsConfig'>Configure Obs</a>";
   ptr += "</body>\n";
   ptr += "</html>\n";
   return ptr;
@@ -179,6 +223,64 @@ void handleConfigSet()
   ESP.restart();
 }
 
+void handleobsConfigGet()
+{
+  if(SPIFFS.exists(obsConfig))
+  {
+    StaticJsonDocument<500> doc;
+    
+    File config = SPIFFS.open(obsConfig, FILE_READ);
+    DeserializationError error = deserializeJson(doc, config);
+    if (error){
+        Serial.println(F("Failed to read file"));
+        Serial.println(error.c_str());
+    }
+
+    String ip = doc["ip"];
+    String port = doc["port"];
+    String password = doc["pass"];
+    config.close();
+    server.send(200, "text/html", sendObsConfigHtml(ip, port, password));
+  } else {
+    String ip = "Ip of computer obs is running on.";
+    String port = "4444";
+    String password = "";
+    server.send(200, "text/html", sendObsConfigHtml(ip, port, password));
+  }
+}
+
+void handleobsConfigSet()
+{
+  server.send(200, "text/plain", "Obs config saved rebooting...");
+  String ip = server.arg(0);
+  String port = server.arg(1);
+  String pass = server.arg(2);
+
+  StaticJsonDocument<500> doc;
+  File configFile = SPIFFS.open(obsConfig, FILE_WRITE);
+
+  doc["ip"] = ip;
+  doc["port"] = port;
+  doc["pass"] = pass;
+
+  serializeJson(doc, configFile);
+  serializeJson(doc, Serial);
+  configFile.close();
+  Serial.println("\nSaved Config settings... Rebooting in 3 seconds");
+  delay(3000);
+  ESP.restart();
+}
+
+void handleobsConfigReset()
+{
+  server.send(200, "text/plain", "Resetting Obs Config, please bear with us.");
+  Serial.println("removing config.....");
+  SPIFFS.remove(obsConfig);
+  Serial.println("Config removed rebooting");
+  delay(3000);
+  ESP.restart();
+}
+
 bool readConfig(String fileName)
 {
   if(SPIFFS.exists(fileName)) {
@@ -208,6 +310,9 @@ void setupEndpoints(String type)
     server.on("/reset", handleReset);
     server.on("/config", handleconfigGet);
     server.on("/configSet", handleConfigSet);
+    server.on("/obsConfig", handleobsConfigGet);
+    server.on("/obsConfigSet", handleobsConfigSet);
+    server.on("/resetObs", handleobsConfigReset);
     server.onNotFound(handleNotFound);
   }
 }
@@ -293,3 +398,5 @@ void WIFI_loop() {
     // delay(10000);
     // Serial.println("WiFi Status: " + WiFi.status());
 }
+
+#endif

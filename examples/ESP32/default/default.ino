@@ -13,19 +13,22 @@
  */
 
 // Non-core files
+#include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <FS.h>
 #include "SPIFFS.h"
-#include "wifi.h"
+#include <arduino-timer.h>
 
 // Core files
-//#include "eeprom.h"
+#include "eeprom.h"
+#include "leds.h"
 #include "oled.h"
 #include "knob.h"
-#include "leds.h"
-#include "keypad.h"
+#include "sparkpad_keypad.h"
+#include "sparkpad_wifi.h"
+#include "sparkpad_obs.h"
 
 /*
  * Definitions
@@ -67,6 +70,8 @@
  * Bar graph behaviour
  */
 
+Timer<1, millis> save_timer;
+
 void bar_value_changed() {
 
   float translated = bar_value * (10.0 / VOLUME_RANGE);
@@ -95,6 +100,50 @@ void knob_button() {
 /*
  * Keypad behaviour
  */
+
+// Timer array and callbacks
+
+Timer<1, millis, byte> timer_array[12];
+
+bool timer_callback(byte index) {
+
+  switchActive[index] = 0;
+
+  return true;
+}
+
+void pressed_callback(byte index) {
+
+  byte my_mode = localSwitchMode[index];
+  byte my_state = switchActive[index];
+  byte my_delay = localDelay[index];
+
+  switch (my_mode) {
+
+    // static
+    case 0:
+      break;
+
+    // toggle
+    case 1:
+
+      if (my_state == 0) switchActive[index] = 1;
+      else switchActive[index] = 0;
+      break;
+
+    // delay
+    case 2:
+
+      // stop active timer
+      timer_array[index].cancel();
+      
+      // start timer
+      timer_array[index].in(my_delay*1000, timer_callback, index);
+
+      switchActive[index] = 1;
+      break;
+  }
+}
 
 void keyEventListener(KeypadEvent key, KeyState kpadState) {
   if (kpadState == PRESSED) {
@@ -165,9 +214,13 @@ void setup(){
 
   // Bar graph
   bar_value_changed();
+  save_timer.every(1000, save_bar_value);
 
   // Wifi
   WIFI_setup();
+
+  // Obs
+  // Serial.print(getOBSConfig());
 }
 
 /*
@@ -176,8 +229,8 @@ void setup(){
 
 void loop() {
 
+  // check keypad and knob
   keypad.getKeys();
-
   long knob_value_new = knob.read();
 
   if (knob_value_new != knob_value) {
@@ -191,13 +244,21 @@ void loop() {
     if (bar_value_new != bar_value) {
 
       bar_value = bar_value_new;
-
       bar_value_changed();
-      // save_bar_value(); this currently crashes
     }
   }
 
+  // tick timers
+  for (int i = 0; i < 12; i++) {
+
+    timer_array[i].tick();
+  }
+
+  save_timer.tick();
+
+  // update LEDs
   LEDs_loop();
 
+  // do WIFI stuff
   WIFI_loop();
 }

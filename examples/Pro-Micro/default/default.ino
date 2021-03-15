@@ -18,7 +18,7 @@
 #include "oled.h"
 #include "knob.h"
 #include "leds.h"
-#include "keypad.h"
+#include "sparkpad_keypad.h"
 
 /*
  * Definitions
@@ -302,7 +302,6 @@ void loop() {
     if (bar_value_new != bar_value) {
 
       bar_value = bar_value_new;
-
       bar_value_changed();
     }
   }
