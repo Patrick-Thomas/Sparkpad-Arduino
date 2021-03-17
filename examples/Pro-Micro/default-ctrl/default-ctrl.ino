@@ -14,10 +14,10 @@
 #include <arduino-timer.h>
 
 // Core files
-#include "eeprom.h"
-#include "oled.h"
-#include "knob.h"
-#include "leds.h"
+#include "sparkpad_eeprom.h"
+#include "sparkpad_oled.h"
+#include "sparkpad_knob.h"
+#include "sparkpad_leds.h"
 #include "sparkpad_keypad.h"
 
 /*

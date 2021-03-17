@@ -8,7 +8,7 @@
 #include <menuIO/SSD1306AsciiOut.h>
 #include <menuIO/chainStream.h>
 
-#include "eeprom.h"
+#include "sparkpad_eeprom.h"
 
 using namespace Menu;
 

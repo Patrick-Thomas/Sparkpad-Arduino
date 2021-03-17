@@ -2,7 +2,7 @@
 #define SP_LED
 
 #include <Arduino.h>
-#include "eeprom.h"
+#include "sparkpad_eeprom.h"
 
 #define TM16XX_CMD_DATA_AUTO 0x40
 #define TM16XX_CMD_DATA_READ 0x42

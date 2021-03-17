@@ -22,10 +22,10 @@
 #include <arduino-timer.h>
 
 // Core files
-#include "eeprom.h"
-#include "leds.h"
-#include "oled.h"
-#include "knob.h"
+#include "sparkpad_eeprom.h"
+#include "sparkpad_leds.h"
+#include "sparkpad_oled.h"
+#include "sparkpad_knob.h"
 #include "sparkpad_keypad.h"
 #include "sparkpad_wifi.h"
 #include "sparkpad_obs.h"

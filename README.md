@@ -50,11 +50,13 @@ To adjust the lighting of your Sparkpad, you can use the OLED and 3 menu buttons
 
 **Delay** : The key delay setting. This option is only relevant if this key is in "delay" mode. You can choose any delay between 1 and 255 seconds.
 
-# Customisation
+# Firmware
 
 To develop custom firmware for your Sparkpad (or to update to newer firmware), there are 3 options available to you.
 
 ## The easy way - Arduino IDE
+
+### Installation
 
 You will first need to download install the [Arduino IDE](https://www.arduino.cc/en/software), and import the Sparkpad library using the Arduino Library Manager:
 
@@ -62,25 +64,31 @@ You will first need to download install the [Arduino IDE](https://www.arduino.cc
 
 ![](/images/libman2.png)
 
-You may get prompted to install some additional libraries, ensure you do else the code will not work.
+You may get prompted to install some additional libraries, ensure you do else the code will not work. There is one library you will have to install slightly differently, due to an issue with the Arduino Library Manager. Click on Code -> Download Zip on [this page](https://github.com/Nullkraft/Keypad) to download the library, then  import it into the Arduino IDE using the Add .ZIP Library tool:
 
-Your Sparkpad will be visible to the Arduino IDE as a serial device on a particular port, and the port name will depend on which OS you are using (COM for Windows, dev/tty for Mac and Linux). The board type is Arduino Leonardo: 
+![](/images/addzip.png)
+
+### Uploading
+
+When plugged in via USB, your Sparkpad will be visible to the Arduino IDE as a serial device on a particular port, and the port name will depend on which OS you are using (COM for Windows, dev/tty for Mac and Linux). The board type is Arduino Leonardo: 
 
 ![](/images/port.png)
 
 ![](/images/board.png)
 
-To upload the latest firmware version to your Sparkpad, simply choose Sparkpad->Pro-Micro->default from the examples menu and hit upload. If you are looking to customise the firmware, then keep reading!
+To upload the latest firmware version to your Sparkpad, simply choose Sparkpad  -> Pro-Micro -> default from the examples menu and hit upload. If you are looking to customise the firmware, then keep reading!
+
+### Customisation
 
 The Arduino firmware is split into two components - the .ino file, and .h (or header) files.
 
-### .ino file
+#### .ino file
 
 This file - or 'sketch' in Arduino parlance - contains the core code which runs on the Sparkpad. You can break down this file into 3 parts. At the top are **definitions** and **includes**: definitions specify global parameters (such as mappings for the Sparkpad's 12 keys), and includes pull in resources from external files (such as the code for the OLED). Below these is the **setup** function which runs once when the Sparkpad boots up and initialises all the components. Finally the **loop** function is the code which runs continuously on the Sparkpad, and this is where all the good stuff happens! The .ino file also contains a few utility functions, which are just there for convenience and to avoid duplicate code.
 
 If you are just looking to adjust key mappings or other global parameters on your Sparkpad, then you only have to make changes to the necessary definitions in the .ino file.
 
-### knob.h, leds.h and oled.h files
+#### knob.h, leds.h and oled.h files
 
 These files contain code specific to a particular Sparkpad component. These files have their own **definitions** and **includes**, and all the functions which define their behaviour. If you are looking to add bespoke functionality to your Sparkpad, then you will probably have to tweak one or more of these files.
 
@@ -90,11 +98,11 @@ If you don't want to look at the code and just want to upload firmware, you can 
 
 ## The pro way - platformio
 
-If you intend to make serious modifications to your Sparkpad firmware, then we recommend downloading VScode and installing the platformio plugin. This repo contains a platformio.ini file which allows you to import it as a platformio project. Coding inside platformio lets you to take advantage of tools such as code completion and syntax checking, and gives you easy access to the .h files which are more hidden inside the Arduino IDE.
+If you intend to make serious modifications to your Sparkpad firmware, then we recommend downloading VScode and installing the platformio plugin. This repo contains a platformio.ini file which allows you to open it inside VScode as a platformio project. Coding inside platformio lets you to take advantage of tools such as code completion and syntax checking, and gives you easy access to the .h files which are more hidden inside the Arduino IDE.
 
-The only snag with using platformio is it does not recognise .ino files as source files, so you will have to change the .ino suffix to .cpp on the files you are working on. If you intend to push changes to the main Sparkpad branch, please remember to change these back to .ino before you push to maintain compatibility with the Arduino IDE.
+The only snag with using platformio is it does not recognise .ino files as source files, so you will have to change the .ino suffix to .cpp on the files you are working on. If you intend to push changes to the main Sparkpad branch, please remember to change these back to .ino before you push to maintain backwards compatibility with the Arduino IDE.
 
-To ensure backward compatibility, when writing new and experimental code please create a new example within the examples folder, and add the example as an environment inside the platformio.ini file. **Don't add your code to one of the default examples**. If you feel the code you are writing deserves to be part of the default firmware, then please raise an issue in Github first.
+To further ensure backwards compatibility, when writing new and experimental code please create a new example within the examples folder, and add the example as an environment inside the platformio.ini file. **Don't add your code to one of the default examples**. If you feel the code you are writing deserves to be part of the default firmware, then please raise an issue in Github first.
 
 # Contributing
 
