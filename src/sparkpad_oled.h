@@ -14,6 +14,9 @@ using namespace Menu;
 
 SSD1306AsciiWire oled;
 
+// Should be 1 for bicolour OLEDs
+#define VERTICAL_OFFSET 0
+
 #define MAX_DEPTH 2
 
 #define FIRST_LINE 0 //text position for first line
@@ -61,7 +64,7 @@ MENU(mainMenu,"LED settings",doNothing,noEvent,wrapStyle
   ,EXIT("Hide")
   );
 
-const panel panels[] MEMMODE = {{0, 0, 128 / fontW, 64 / fontH}};
+const panel panels[] MEMMODE = {{0, VERTICAL_OFFSET, 128 / fontW, 64 / fontH}};
 navNode* nodes[sizeof(panels) / sizeof(panel)]; //navNodes to store navigation status
 panelsList pList(panels, nodes, 1); //a list of panels and nodes
 idx_t tops[MAX_DEPTH] = {0, 0}; //store cursor positions for each level

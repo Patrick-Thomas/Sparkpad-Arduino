@@ -50,6 +50,12 @@ To adjust the lighting of your Sparkpad, you can use the OLED and 3 menu buttons
 
 **Delay** : The key delay setting. This option is only relevant if this key is in "delay" mode. You can choose any delay between 1 and 255 seconds.
 
+## Cleaning your Sparkpad
+
+To clean the surfaces of your Sparkpad case, you can use soapy water and a non abrasive scrubber such as a sponge or toothbrush. You can also use Isopropyl Alcohol (IPA), and this tends to a better job cleaning the engraved parts. If using soapy water, you should first remove the PCB from the case by undoing the 4 corner screws. With Isopropyl Alcohol you can leave the PCB in the case. You may find that white marks are left behind after cleaning; to remove these, rub the surfaces with clean white paper.
+
+**Do not use Acetone or other strong solvents, as these will dissolve the black paint on the top panel.**
+
 # Firmware
 
 To develop custom firmware for your Sparkpad (or to update to newer firmware), there are 3 options available to you.
