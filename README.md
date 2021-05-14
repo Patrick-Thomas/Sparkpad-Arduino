@@ -64,7 +64,7 @@ To develop custom firmware for your Sparkpad (or to update to newer firmware), t
 
 ### Installation
 
-You will first need to download install the [Arduino IDE](https://www.arduino.cc/en/software), and import the Sparkpad library using the Arduino Library Manager:
+You will first need to download and install the [Arduino IDE](https://www.arduino.cc/en/software), and import the Sparkpad library using the Arduino Library Manager:
 
 ![](/images/libman.png)
 

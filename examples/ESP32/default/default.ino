@@ -28,31 +28,11 @@
 #include "sparkpad_knob.h"
 #include "sparkpad_keypad.h"
 #include "sparkpad_wifi.h"
-#include "sparkpad_obs.h"
+// #include "sparkpad_obs.h"
 
 /*
  * Definitions
  */
-
-// Map keys for the buttons and knob here. For a list of available keys, check out:
-// https://github.com/NicoHood/HID/blob/master/src/KeyboardLayouts/ImprovedKeylayouts.h
-
-#define BUTTON_1 KEY_F13
-#define BUTTON_2 KEY_F14
-#define BUTTON_3 KEY_F15
-#define BUTTON_4 KEY_F16
-#define BUTTON_5 KEY_F17
-#define BUTTON_6 KEY_F18
-#define BUTTON_7 KEY_F19
-#define BUTTON_8 KEY_F20
-#define BUTTON_9 KEY_F21
-#define BUTTON_10 KEY_RIGHT_SHIFT
-#define BUTTON_11 KEY_F23
-#define BUTTON_12 KEY_F24
-
-#define KNOB_INCREASE MEDIA_VOLUME_UP
-#define KNOB_DECREASE MEDIA_VOLUME_DOWN
-#define KNOB_BUTTON MEDIA_VOLUME_MUTE
 
 // Choose your OS here (Comment out incorrect OS) 
 #define OS_WINDOWS10
@@ -67,52 +47,57 @@
 #endif
 
 /*
- * Bar graph behaviour
+ * Knob + Bargraph behaviour
  */
 
 Timer<1, millis> save_timer;
 
-void bar_value_changed() {
-
-  float translated = bar_value * (10.0 / VOLUME_RANGE);
-  update_bar(round(translated));
-}
-
-/*
- * Knob behaviour
- */
-
 void knob_increase() {
 
-  Serial.println("Knob increase");
+  if (!muted) {
+    
+    knob_value = min(max(0, knob_value + 1), VOLUME_RANGE);
+    update_bar(round(knob_value * (10.0 / VOLUME_RANGE)));
+  }
 }
 
 void knob_decrease() {
 
-  Serial.println("Knob decrease");
+  if (!muted) {
+    
+    knob_value = min(max(0, knob_value - 1), VOLUME_RANGE);
+    update_bar(round(knob_value * (10.0 / VOLUME_RANGE)));
+  }
 }
 
 void knob_button() {
 
-  Serial.println("Knob button");
+  if (muted) {
+
+    update_bar(round(knob_value * (10.0 / VOLUME_RANGE)));
+    muted = false;
+  }
+
+  else {
+    
+    update_bar(0);
+    muted = true;
+  }
 }
 
 /*
  * Keypad behaviour
  */
 
-// Timer array and callbacks
-
 Timer<1, millis, byte> timer_array[12];
 
 bool timer_callback(byte index) {
 
   switchActive[index] = 0;
-
   return true;
 }
 
-void pressed_callback(byte index) {
+void key_pressed(byte index) {
 
   byte my_mode = localSwitchMode[index];
   byte my_state = switchActive[index];
@@ -142,60 +127,33 @@ void pressed_callback(byte index) {
 
       switchActive[index] = 1;
       break;
+
+    // group toggle
+    case 3:
+
+      // turn off all buttons in a group
+      for (int i = 0; i < 12; i++) {
+
+        if (localSwitchMode[i] == 3) switchActive[i] = 0;
+      }
+
+      switchActive[index] = 1;
+      break;
   }
 }
 
-void keyEventListener(KeypadEvent key, KeyState kpadState) {
-  if (kpadState == PRESSED) {
-  
-    switch (key) {
-  
-      case 'B': 
-        nav.doNav(downCmd);
-        nav.doOutput();
-        break;
-      case 'C': 
-        nav.doNav(enterCmd);
-        nav.doOutput();
-        break;
-      case 'D': 
-        nav.doNav(upCmd);
-        nav.doOutput();
-        break;
-      default: 
-        Serial.print("Press: ");
-        Serial.println(key);
-        break;  
-    }
-  }
-  
-  else if (kpadState == RELEASED) {
-  
-    switch (key) {
+void key_released(byte index) {
 
-      case 'B':
-      case 'C':
-      case 'D':
-        break;
-      default:
-        Serial.print("Release: ");
-        Serial.println(key);
-        break;
-    }
-  }
 }
 
 /*
- * Setup function
+ * Arduino code
  */
 
 void setup(){
   
-  // EEPROM
+  // EEPROM settings
   EEPROM_setup();
-
-  // Keyboard
-  keypad.addStatedEventListener(keyEventListener);
 
   // Serial
   Serial.begin(9600);
@@ -213,8 +171,11 @@ void setup(){
   LEDS_setup();
 
   // Bar graph
-  bar_value_changed();
-  save_timer.every(1000, save_bar_value);
+  update_bar(round(knob_value * (10.0 / VOLUME_RANGE)));
+  save_timer.every(1000, save_knob_value);
+
+  // Knob
+  knob_setup();
 
   // Wifi
   WIFI_setup();
@@ -229,24 +190,17 @@ void setup(){
 
 void loop() {
 
-  // check keypad and knob
-  keypad.getKeys();
-  long knob_value_new = knob.read();
+  // check keypad
+  keypad_loop();
 
-  if (knob_value_new != knob_value) {
+  // check knob
+  knob_loop();
 
-    if (knob_value_new > knob_value) knob_increase();
-    else knob_decrease();
+  // update EEPROM
+  EEPROM_loop();
 
-    byte bar_value_new = _min(_max(0, bar_value + (knob_value_new - knob_value)),VOLUME_RANGE);
-    knob_value = knob_value_new;
-
-    if (bar_value_new != bar_value) {
-
-      bar_value = bar_value_new;
-      bar_value_changed();
-    }
-  }
+  // update LEDs
+  LEDs_loop();
 
   // tick timers
   for (int i = 0; i < 12; i++) {
@@ -255,9 +209,6 @@ void loop() {
   }
 
   save_timer.tick();
-
-  // update LEDs
-  LEDs_loop();
 
   // do WIFI stuff
   WIFI_loop();

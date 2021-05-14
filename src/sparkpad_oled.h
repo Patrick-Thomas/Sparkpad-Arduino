@@ -7,6 +7,7 @@
 #include "SSD1306AsciiWire.h"
 #include <menuIO/SSD1306AsciiOut.h>
 #include <menuIO/chainStream.h>
+// #include <menuIO/serialIO.h>
 
 #include "sparkpad_eeprom.h"
 
@@ -48,19 +49,21 @@ result loader() {
   return proceed;
 }
 
-MENU(advancedMenu, "Switch settings",doNothing,noEvent,wrapStyle
+MENU(keyMenu, "Key settings",doNothing,noEvent,wrapStyle
   ,FIELD(selectedLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedLightingMode,"Lighting mode","",0,1,1,0,saver,exitEvent,noStyle)
-  ,FIELD(selectedSwitchMode,"Switch mode","",0,2,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedSwitchMode,"Switch mode","",0,3,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedDefaultToggleState,"Default state","",0,1,1,0,saver,exitEvent,noStyle)
+  // ,FIELD(selectedDefaultGroupToggleState,"Default group toggle state","",0,1,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedDelay,"Delay","s",0,255,1,0,saver,exitEvent,noStyle)
   ,EXIT("<Back")
   );
 
-MENU(mainMenu,"LED settings",doNothing,noEvent,wrapStyle
+MENU(mainMenu,"Main menu",doNothing,noEvent,wrapStyle
   ,FIELD(globalLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
   ,FIELD(globalLedBrightness,"Brightness","",0,7,1,0,saver,exitEvent,noStyle)
-  ,FIELD(selectedIndex,"Switch","",0,11,1,0,loader,exitEvent,noStyle)
-  ,SUBMENU(advancedMenu)
+  ,FIELD(selectedIndex,"Selected key","",0,11,1,0,loader,exitEvent,noStyle)
+  ,SUBMENU(keyMenu)
   ,EXIT("Hide")
   );
 
@@ -76,11 +79,11 @@ SSD1306AsciiOut outOLED(&oled, tops, pList, 8, 2); //oled output device menu dri
 SSD1306AsciiOut outOLED(&oled, tops, pList, 5, 1); //oled output device menu driver
 #endif
 
-menuOut* constMEM outputs[]  MEMMODE  = {&outOLED}; //list of output devices
+menuOut* constMEM outputs[] MEMMODE = {&outOLED}; //list of output devices
 outputsList out(outputs, 1); //outputs list
 
-//stringIn<0> strIn;//buffer size: 2^5 = 32 bytes, eventually use 0 for a single byte
-// serialIn serial(Serial);
+// stringIn<0> strIn;//buffer size: 2^5 = 32 bytes, eventually use 0 for a single byte
+// serialIn in(Serial);
 chainStream<0> in(NULL);
 
 NAVROOT(nav,mainMenu,MAX_DEPTH,in,out);

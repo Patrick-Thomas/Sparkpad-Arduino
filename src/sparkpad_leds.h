@@ -143,8 +143,6 @@ void update_bar(byte value) {
 
   grid_array[12] = mask & 0xFF;
   grid_array[13] = (mask >> 8) & 0xFF;
-
-  update_tm1638();
 }
 
 void setupDisplay(boolean active, byte intensity)
@@ -170,18 +168,6 @@ void LEDS_setup() {
 }
 
 void LEDs_loop() {
-
-  // save modified values to the local arrays
-  if (selected_index_current != selectedIndex) {
-
-    selected_index_current = selectedIndex;
-    EEPROM_load();
-  }
-
-  localLedColour[selectedIndex] = selectedLedColour;
-  localLightingMode[selectedIndex] = selectedLightingMode;
-  localSwitchMode[selectedIndex] = selectedSwitchMode;
-  localDelay[selectedIndex] = selectedDelay;
 
   // update the brightness
   if (global_led_brightness_current != globalLedBrightness) {
