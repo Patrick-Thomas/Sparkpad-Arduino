@@ -49,12 +49,12 @@ result loader() {
   return proceed;
 }
 
-MENU(keyMenu, "Key settings",doNothing,noEvent,wrapStyle
-  ,FIELD(selectedLedColour,"Colour","",0,7,1,0,saver,exitEvent,noStyle)
+MENU(keyMenu,"Key settings",doNothing,noEvent,wrapStyle
+  ,FIELD(selectedActiveLedColour,"Active colour","",0,7,1,0,saver,exitEvent,noStyle)
+  ,FIELD(selectedInactiveLedColour,"Inactive colour","",0,7,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedLightingMode,"Lighting mode","",0,1,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedSwitchMode,"Switch mode","",0,3,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedDefaultToggleState,"Default state","",0,1,1,0,saver,exitEvent,noStyle)
-  // ,FIELD(selectedDefaultGroupToggleState,"Default group toggle state","",0,1,1,0,saver,exitEvent,noStyle)
   ,FIELD(selectedDelay,"Delay","s",0,255,1,0,saver,exitEvent,noStyle)
   ,EXIT("<Back")
   );

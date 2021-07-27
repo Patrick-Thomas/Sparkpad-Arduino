@@ -8,31 +8,31 @@
 byte globalLedColourAddress = 0;
 byte globalLedBrightnessAddress = 1;
 byte knob_address = 2;
-byte localLedColourAddress = 3;
+byte localActiveLedColourAddress = 3;
 byte localLightingModeAddress = 15;
 byte localSwitchModeAddress = 27;
 byte localDelayAddress = 39;
 byte selectedIndexAddress = 51;
 byte freshByteAddress = 52;
 byte localDefaultToggleStateAddress = 53;
-// byte localDefaultGroupToggleStateAddress = 65;
+byte localInactiveLedColourAddress = 65;
 
 // Values to update
 byte globalLedColour = 0;
 byte globalLedBrightness = 0;
-byte localLedColour[12] = {0};
+byte localActiveLedColour[12] = {0};
+byte localInactiveLedColour[12] = {0};
 byte localLightingMode[12] = {0};
 byte localSwitchMode[12] = {0};
 byte localDelay[12] = {0};
 byte localDefaultToggleState[12] = {0};
-// byte localDefaultGroupToggleState[12] = {0};
 byte switchActive[12] = {0};
 byte selectedIndex = 0;
-byte selectedLedColour = 0;
+byte selectedActiveLedColour = 0;
+byte selectedInactiveLedColour = 0;
 byte selectedLightingMode = 0;
 byte selectedSwitchMode = 0;
 byte selectedDefaultToggleState = 0;
-// byte selectedDefaultGroupToggleState = 0;
 byte selectedDelay = 0;
 byte knob_value = 0;
 
@@ -63,7 +63,12 @@ void EEPROM_save() {
   EEPROM.commit();
   #endif
 
-  EEPROM.write(localLedColourAddress + selectedIndex, selectedLedColour);
+  EEPROM.write(localActiveLedColourAddress + selectedIndex, selectedActiveLedColour);
+  #ifdef ESP32
+  EEPROM.commit();
+  #endif
+
+  EEPROM.write(localInactiveLedColourAddress + selectedIndex, selectedInactiveLedColour);
   #ifdef ESP32
   EEPROM.commit();
   #endif
@@ -83,11 +88,6 @@ void EEPROM_save() {
   EEPROM.commit();
   #endif
 
-  // EEPROM.write(localDefaultGroupToggleStateAddress + selectedIndex, selectedDefaultGroupToggleState);
-  // #ifdef ESP32
-  // EEPROM.commit();
-  // #endif
-
   EEPROM.write(localDelayAddress + selectedIndex, selectedDelay);
   #ifdef ESP32
   EEPROM.commit();
@@ -101,11 +101,11 @@ void EEPROM_save() {
 
 void EEPROM_load() {
 
-  selectedLedColour = localLedColour[selectedIndex];
+  selectedActiveLedColour = localActiveLedColour[selectedIndex];
+  selectedInactiveLedColour = localInactiveLedColour[selectedIndex];
   selectedLightingMode = localLightingMode[selectedIndex];
   selectedSwitchMode = localSwitchMode[selectedIndex];
   selectedDefaultToggleState = localDefaultToggleState[selectedIndex];
-  // selectedDefaultGroupToggleState = localDefaultGroupToggleState[selectedIndex];
   selectedDelay = localDelay[selectedIndex];
 
   EEPROM.write(selectedIndexAddress, selectedIndex);
@@ -117,11 +117,17 @@ void EEPROM_load() {
 void EEPROM_setup() {
 
   #ifdef ESP32
-  EEPROM.begin(65);
+  EEPROM.begin(77);
+  #endif
+
+  bool factory_reset = false;
+
+  #ifdef FACTORY_RESET
+  factory_reset = true;
   #endif
 
   // This should only run for a fresh Sparkpad
-  if (EEPROM.read(freshByteAddress) == 255) {
+  if (EEPROM.read(freshByteAddress) == 255 || factory_reset) {
 
     EEPROM.write(globalLedColourAddress, 0);
     #ifdef ESP32
@@ -140,7 +146,12 @@ void EEPROM_setup() {
 
     for (int i = 0; i < 12; i++) {
 
-      EEPROM.write(localLedColourAddress + i, 0);
+      EEPROM.write(localActiveLedColourAddress + i, 0);
+      #ifdef ESP32
+      EEPROM.commit();
+      #endif
+
+      EEPROM.write(localInactiveLedColourAddress + i, 0);
       #ifdef ESP32
       EEPROM.commit();
       #endif
@@ -159,11 +170,6 @@ void EEPROM_setup() {
       #ifdef ESP32
       EEPROM.commit();
       #endif
-
-      // EEPROM.write(localDefaultGroupToggleStateAddress + i, 0);
-      // #ifdef ESP32
-      // EEPROM.commit();
-      // #endif
 
       EEPROM.write(localDelayAddress + i, 0);
       #ifdef ESP32
@@ -191,19 +197,19 @@ void EEPROM_setup() {
 
   for (int i = 0; i < 12; i++) {
 
-    localLedColour[i] = EEPROM.read(localLedColourAddress + i);
+    localActiveLedColour[i] = EEPROM.read(localActiveLedColourAddress + i);
+    localInactiveLedColour[i] = EEPROM.read(localInactiveLedColourAddress + i);
     localLightingMode[i] = EEPROM.read(localLightingModeAddress + i);
     localSwitchMode[i] = EEPROM.read(localSwitchModeAddress + i);
     localDefaultToggleState[i] = EEPROM.read(localDefaultToggleStateAddress + i);
-    // localDefaultGroupToggleState[i] = EEPROM.read(localDefaultGroupToggleStateAddress + i);
     localDelay[i] = EEPROM.read(localDelayAddress + i);
   }
 
-  selectedLedColour = localLedColour[selectedIndex];
+  selectedActiveLedColour = localActiveLedColour[selectedIndex];
+  selectedInactiveLedColour = localInactiveLedColour[selectedIndex];
   selectedLightingMode = localLightingMode[selectedIndex];
   selectedSwitchMode = localSwitchMode[selectedIndex];
   selectedDefaultToggleState = localDefaultToggleState[selectedIndex];
-  // selectedDefaultGroupToggleState = localDefaultGroupToggleState[selectedIndex];
   selectedDelay = localDelay[selectedIndex];
 
   knob_value = EEPROM.read(knob_address);
@@ -226,7 +232,8 @@ void EEPROM_loop() {
     EEPROM_load();
   }
 
-  localLedColour[selectedIndex] = selectedLedColour;
+  localActiveLedColour[selectedIndex] = selectedActiveLedColour;
+  localInactiveLedColour[selectedIndex] = selectedInactiveLedColour;
   localLightingMode[selectedIndex] = selectedLightingMode;
   localSwitchMode[selectedIndex] = selectedSwitchMode;
   localDefaultToggleState[selectedIndex] = selectedDefaultToggleState;

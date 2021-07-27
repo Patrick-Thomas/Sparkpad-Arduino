@@ -109,7 +109,8 @@ void update_leds() {
 
   for (byte i = 0; i < 12; i++) {
 
-    byte my_colour = localLedColour[i];
+    byte my_active_colour = localActiveLedColour[i];
+    byte my_inactive_colour = localInactiveLedColour[i];
     byte my_lighting_mode = localLightingMode[i];
     byte my_switch_mode = localSwitchMode[i];
     byte my_state = switchActive[i];
@@ -117,7 +118,7 @@ void update_leds() {
     // static
     if (my_switch_mode == 0) {
 
-      if (my_lighting_mode == 1) update_led(i, my_colour);
+      if (my_lighting_mode == 1) update_led(i, my_active_colour);
       else update_led(i, globalLedColour);
     }
 
@@ -127,12 +128,12 @@ void update_leds() {
       // active
       if (my_state == 1) {
 
-        if (my_lighting_mode == 1) update_led(i, my_colour);
+        if (my_lighting_mode == 1) update_led(i, my_active_colour);
         else update_led(i, globalLedColour);
       }
 
       // inactive
-      else update_led(i, 0);
+      else update_led(i, my_inactive_colour);
     }
   }
 }

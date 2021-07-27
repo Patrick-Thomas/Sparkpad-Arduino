@@ -3,6 +3,7 @@
  */
 
 // #define PROTOTYPE_PCB
+// #define FACTORY_RESET
 
 /*
  * Files to include
